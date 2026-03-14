@@ -87,7 +87,7 @@ export default function DetailDataTable({ title, leads, users, meetings = [], on
               <TableRow key={lead.id}>
                 <TableCell className="font-medium">{lead.clientName}</TableCell>
                 <TableCell>{lead.phoneNumber}</TableCell>
-                <TableCell>₹{lead.loanRequirement.toLocaleString()}</TableCell>
+                <TableCell>₹{lead.loanRequirement}</TableCell>
                 <TableCell>{bo?.name}</TableCell>
                 <TableCell>—</TableCell>
                 <TableCell><Badge variant={lead.numberStatus === 'Connected' ? 'default' : 'secondary'}>{lead.numberStatus || '—'}</Badge></TableCell>

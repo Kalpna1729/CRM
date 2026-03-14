@@ -149,7 +149,7 @@ export default function BODashboard() {
                 <TableRow key={lead.id}>
                   <TableCell className="font-medium">{lead.clientName}</TableCell>
                   <TableCell>{lead.phoneNumber}</TableCell>
-                  <TableCell>₹{lead.loanRequirement.toLocaleString()}</TableCell>
+                  <TableCell>₹{lead.loanRequirement}</TableCell>
                   <TableCell>
                     <Select value={lead.numberStatus || undefined} onValueChange={v => updateNumberStatus(lead.id, v as NumberStatus)}>
                       <SelectTrigger className="w-36 h-8 text-xs"><SelectValue placeholder="Set status" /></SelectTrigger>
@@ -363,7 +363,7 @@ export default function BODashboard() {
                         <TableCell className="font-medium">{m.timeSlot}</TableCell>
                         <TableCell>{lead?.clientName}</TableCell>
                         <TableCell>{lead?.phoneNumber}</TableCell>
-                        <TableCell>₹{lead?.loanRequirement.toLocaleString()}</TableCell>
+                        <TableCell>₹{lead?.loanRequirement}</TableCell>
                         <TableCell>{bdm?.name}</TableCell>
                         <TableCell><Badge variant="outline">{m.meetingType}</Badge></TableCell>
                         <TableCell>

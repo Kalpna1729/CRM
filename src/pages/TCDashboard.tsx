@@ -86,8 +86,8 @@ export default function TCDashboard() {
       location: scheduleLocation || undefined,
       state: scheduleState || undefined,
       productType: scheduleProductType || undefined,
-      finalRequirement: scheduleFinalReq ? Number(scheduleFinalReq) : undefined,
-      collateralValue: scheduleCollateral ? Number(scheduleCollateral) : undefined,
+      finalRequirement: scheduleFinalReq || undefined,
+      collateralValue: scheduleCollateral || undefined,
     });
     await updateLead(leadId, { meetingId });
     setScheduleBDM(''); setScheduleSlot('');
@@ -187,7 +187,7 @@ export default function TCDashboard() {
                       <TableRow key={req.id}>
                         <TableCell className="font-medium">{lead?.clientName}</TableCell>
                         <TableCell>{lead?.phoneNumber}</TableCell>
-                        <TableCell>₹{lead?.loanRequirement.toLocaleString()}</TableCell>
+                        <TableCell>₹{lead?.loanRequirement}</TableCell>
                         <TableCell>{bo?.name}</TableCell>
                         <TableCell><Badge variant={req.status === 'Approved' ? 'default' : req.status === 'Rejected' ? 'destructive' : 'secondary'}>{req.status}</Badge></TableCell>
                         <TableCell>
@@ -225,7 +225,7 @@ export default function TCDashboard() {
             return (
               <Card key={req.id}>
                 <CardHeader>
-                  <CardTitle className="text-base">{lead.clientName} — ₹{lead.loanRequirement.toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-2">(BO: {bo?.name})</span></CardTitle>
+                  <CardTitle className="text-base">{lead.clientName} — ₹{lead.loanRequirement} <span className="text-sm font-normal text-muted-foreground ml-2">(BO: {bo?.name})</span></CardTitle>
                 </CardHeader>
                 <CardContent>
                   {/* Row 1: BDM, Time Slot, Meeting Type */}
@@ -305,8 +305,8 @@ export default function TCDashboard() {
                     <div>
                       <p className="text-sm font-medium mb-2">Final Requirement (₹)</p>
                       <Input
-                        type="number"
-                        placeholder="e.g. 5000000"
+                        type="text"
+                        placeholder="e.g. 5000000 or 10-15 Lakhs"
                         value={scheduleFinalReq}
                         onChange={e => setScheduleFinalReq(e.target.value)}
                       />
@@ -314,8 +314,8 @@ export default function TCDashboard() {
                     <div>
                       <p className="text-sm font-medium mb-2">Collateral Value (₹)</p>
                       <Input
-                        type="number"
-                        placeholder="e.g. 10000000"
+                        type="text"
+                        placeholder="e.g. 10000000 or 1-2 Cr"
                         value={scheduleCollateral}
                         onChange={e => setScheduleCollateral(e.target.value)}
                       />

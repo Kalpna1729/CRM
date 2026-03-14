@@ -23,7 +23,7 @@ export interface Lead {
   id: string;
   clientName: string;
   phoneNumber: string;
-  loanRequirement: number;
+  loanRequirement: string;
   address?: string;
   numberStatus: NumberStatus;
   leadStatus: LeadStatus;
@@ -65,8 +65,8 @@ export interface Meeting {
   location?: string;
   state?: string;
   productType?: ProductType;
-  finalRequirement?: number;
-  collateralValue?: number;
+  finalRequirement?: string;
+  collateralValue?: string;
 }
 
 export interface Team {
@@ -89,7 +89,7 @@ export interface DuplicateLead {
   id: string;
   clientName: string;
   phoneNumber: string;
-  loanRequirement: number;
+  loanRequirement: string;
   address?: string;
   originalLeadId?: string;
   originalBoName?: string;

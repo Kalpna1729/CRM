@@ -44,7 +44,7 @@ const mapProfile = (p: any): User => ({
 
 const mapLead = (l: any): Lead => ({
   id: l.id, clientName: l.client_name, phoneNumber: l.phone_number,
-  loanRequirement: Number(l.loan_requirement), address: l.address || undefined,
+  loanRequirement: String(l.loan_requirement), address: l.address || undefined,
   numberStatus: l.number_status || '', leadStatus: l.lead_status || '',
   leadType: l.lead_type || '', assignedBOId: l.assigned_bo_id,
   assignedDate: l.assigned_date, meetingRequested: l.meeting_requested,
@@ -65,8 +65,8 @@ const mapMeeting = (m: any): Meeting => ({
   location: m.location || undefined,
   state: m.state || undefined,
   productType: m.product_type || undefined,
-  finalRequirement: m.final_requirement != null ? Number(m.final_requirement) : undefined,
-  collateralValue: m.collateral_value != null ? Number(m.collateral_value) : undefined,
+  finalRequirement: m.final_requirement != null ? String(m.final_requirement) : undefined,
+  collateralValue: m.collateral_value != null ? String(m.collateral_value) : undefined,
 });
 
 const mapMeetingRequest = (r: any): MeetingRequest => ({
@@ -81,7 +81,7 @@ const mapRemark = (r: any): LeadRemark => ({
 
 const mapDuplicateLead = (d: any): DuplicateLead => ({
   id: d.id, clientName: d.client_name, phoneNumber: d.phone_number,
-  loanRequirement: Number(d.loan_requirement), address: d.address || undefined,
+  loanRequirement: String(d.loan_requirement), address: d.address || undefined,
   originalLeadId: d.original_lead_id || undefined,
   originalBoName: d.original_bo_name || undefined,
   uploadedBy: d.uploaded_by || undefined,

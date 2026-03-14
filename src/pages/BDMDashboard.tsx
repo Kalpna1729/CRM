@@ -110,7 +110,7 @@ export default function BDMDashboard() {
                 <TableCell className="font-medium">{m.timeSlot}</TableCell>
                 <TableCell>{m.clientName || lead?.clientName}</TableCell>
                 <TableCell>{lead?.phoneNumber}</TableCell>
-                <TableCell>₹{lead?.loanRequirement.toLocaleString()}</TableCell>
+                <TableCell>₹{lead?.loanRequirement}</TableCell>
                 <TableCell>{tc?.name}</TableCell>
                 <TableCell>{bo?.name}</TableCell>
                 <TableCell><Badge variant="outline">{m.meetingType}</Badge></TableCell>
@@ -143,8 +143,8 @@ export default function BDMDashboard() {
                       {m.productType && (
                         <span><span className="font-semibold text-foreground">Product:</span> <Badge variant="secondary" className="text-xs">{m.productType}</Badge></span>
                       )}
-                      {m.finalRequirement != null && <span><span className="font-semibold text-foreground">Final Req:</span> ₹{m.finalRequirement.toLocaleString()}</span>}
-                      {m.collateralValue != null && <span><span className="font-semibold text-foreground">Collateral:</span> ₹{m.collateralValue.toLocaleString()}</span>}
+                      {m.finalRequirement != null && <span><span className="font-semibold text-foreground">Final Req:</span> ₹{m.finalRequirement}</span>}
+                      {m.collateralValue != null && <span><span className="font-semibold text-foreground">Collateral:</span> ₹{m.collateralValue}</span>}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -229,12 +229,12 @@ export default function BDMDashboard() {
                   <p className="font-semibold text-base">{pendingAssignMeeting.clientName || lead?.clientName}</p>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-muted-foreground">
                     <span><span className="font-medium text-foreground">Phone:</span> {lead?.phoneNumber}</span>
-                    <span><span className="font-medium text-foreground">Loan Req:</span> ₹{lead?.loanRequirement.toLocaleString()}</span>
+                    <span><span className="font-medium text-foreground">Loan Req:</span> ₹{lead?.loanRequirement}</span>
                     {pendingAssignMeeting.location && <span><span className="font-medium text-foreground">Location:</span> {pendingAssignMeeting.location}</span>}
                     {pendingAssignMeeting.state && <span><span className="font-medium text-foreground">State:</span> {pendingAssignMeeting.state}</span>}
                     {pendingAssignMeeting.productType && <span><span className="font-medium text-foreground">Product:</span> {pendingAssignMeeting.productType}</span>}
-                    {pendingAssignMeeting.finalRequirement != null && <span><span className="font-medium text-foreground">Final Req:</span> ₹{pendingAssignMeeting.finalRequirement.toLocaleString()}</span>}
-                    {pendingAssignMeeting.collateralValue != null && <span><span className="font-medium text-foreground">Collateral:</span> ₹{pendingAssignMeeting.collateralValue.toLocaleString()}</span>}
+                    {pendingAssignMeeting.finalRequirement != null && <span><span className="font-medium text-foreground">Final Req:</span> ₹{pendingAssignMeeting.finalRequirement}</span>}
+                    {pendingAssignMeeting.collateralValue != null && <span><span className="font-medium text-foreground">Collateral:</span> ₹{pendingAssignMeeting.collateralValue}</span>}
                   </div>
                 </div>
 

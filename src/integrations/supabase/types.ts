@@ -19,7 +19,7 @@ export type Database = {
           address: string | null
           client_name: string
           id: string
-          loan_requirement: number
+          loan_requirement: string
           original_bo_name: string | null
           original_lead_id: string | null
           phone_number: string
@@ -30,7 +30,7 @@ export type Database = {
           address?: string | null
           client_name: string
           id?: string
-          loan_requirement?: number
+          loan_requirement?: string
           original_bo_name?: string | null
           original_lead_id?: string | null
           phone_number: string
@@ -41,7 +41,7 @@ export type Database = {
           address?: string | null
           client_name?: string
           id?: string
-          loan_requirement?: number
+          loan_requirement?: string
           original_bo_name?: string | null
           original_lead_id?: string | null
           phone_number?: string
@@ -95,7 +95,7 @@ export type Database = {
           id: string
           lead_status: string
           lead_type: string
-          loan_requirement: number
+          loan_requirement: string
           meeting_approved: boolean
           meeting_id: string | null
           meeting_requested: boolean
@@ -111,7 +111,7 @@ export type Database = {
           id: string
           lead_status?: string
           lead_type?: string
-          loan_requirement?: number
+          loan_requirement?: string
           meeting_approved?: boolean
           meeting_id?: string | null
           meeting_requested?: boolean
@@ -127,7 +127,7 @@ export type Database = {
           id?: string
           lead_status?: string
           lead_type?: string
-          loan_requirement?: number
+          loan_requirement?: string
           meeting_approved?: boolean
           meeting_id?: string | null
           meeting_requested?: boolean
@@ -178,10 +178,10 @@ export type Database = {
           bdm_id: string
           bo_id: string
           client_name: string | null
-          collateral_value: number | null
+          collateral_value: string | null
           created_at: string
           date: string
-          final_requirement: number | null
+          final_requirement: string | null
           full_login: boolean | null
           id: string
           lead_id: string
@@ -202,10 +202,10 @@ export type Database = {
           bdm_id: string
           bo_id: string
           client_name?: string | null
-          collateral_value?: number | null
+          collateral_value?: string | null
           created_at?: string
           date: string
-          final_requirement?: number | null
+          final_requirement?: string | null
           full_login?: boolean | null
           id: string
           lead_id: string
@@ -226,10 +226,10 @@ export type Database = {
           bdm_id?: string
           bo_id?: string
           client_name?: string | null
-          collateral_value?: number | null
+          collateral_value?: string | null
           created_at?: string
           date?: string
-          final_requirement?: number | null
+          final_requirement?: string | null
           full_login?: boolean | null
           id?: string
           lead_id?: string

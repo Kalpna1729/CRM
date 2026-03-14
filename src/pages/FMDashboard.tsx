@@ -754,7 +754,7 @@ export default function FMDashboard() {
                       <TableRow key={lead.id}>
                         <TableCell className="font-medium">{lead.clientName}</TableCell>
                         <TableCell>{lead.phoneNumber}</TableCell>
-                        <TableCell>₹{lead.loanRequirement.toLocaleString()}</TableCell>
+                        <TableCell>₹{lead.loanRequirement}</TableCell>
                         <TableCell>{bo?.name}</TableCell>
                         <TableCell><Badge variant={lead.numberStatus === 'Connected' ? 'default' : 'secondary'}>{lead.numberStatus || '—'}</Badge></TableCell>
                         <TableCell><Badge variant="outline">{lead.leadStatus || '—'}</Badge></TableCell>
@@ -864,7 +864,7 @@ export default function FMDashboard() {
                               {meeting?.walkingStatus && <Badge variant="outline" className="text-[10px]">{meeting.walkingStatus}</Badge>}
                             </div>
                           </TableCell>
-                          <TableCell>₹{d.loanRequirement.toLocaleString()}</TableCell>
+                          <TableCell>₹{d.loanRequirement}</TableCell>
                           <TableCell>{bdo?.name || '—'}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">
                             {new Date(d.uploadedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -923,7 +923,7 @@ export default function FMDashboard() {
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div><span className="text-muted-foreground">Client Name</span><p className="font-medium mt-0.5">{d.clientName}</p></div>
                         <div><span className="text-muted-foreground">Phone Number</span><p className="font-medium mt-0.5">{d.phoneNumber}</p></div>
-                        <div><span className="text-muted-foreground">Amount Required</span><p className="font-medium mt-0.5">₹{d.loanRequirement.toLocaleString()}</p></div>
+                        <div><span className="text-muted-foreground">Amount Required</span><p className="font-medium mt-0.5">₹{d.loanRequirement}</p></div>
                         <div><span className="text-muted-foreground">Created Date</span><p className="font-medium mt-0.5">{new Date(d.uploadedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p></div>
                         {meeting && (
                           <>
