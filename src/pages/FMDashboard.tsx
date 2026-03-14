@@ -157,9 +157,10 @@ export default function FMDashboard() {
 
     rows.forEach((row: any, idx: number) => {
       const clientName = row['Client Name'] || row['client_name'] || row['Name'] || row['name'] || '';
-      const phoneNumber = String(row['Phone Number'] || row['phone_number'] || row['Phone'] || row['phone'] || '').trim();
-      const loanReq = String(row['Loan Requirement'] || row['loan_requirement'] || row['Loan Amount'] || row['amount'] || row['Loan Requirement Amount'] || '0');
-      const loanRequirement = Number(loanReq) || 0;
+      // Strip all non-digit characters from phone number
+      const rawPhone = String(row['Phone Number'] || row['phone_number'] || row['Phone'] || row['phone'] || '').trim();
+      const phoneNumber = rawPhone.replace(/\D/g, '');
+      const loanRequirement = String(row['Loan Requirement'] || row['loan_requirement'] || row['Loan Amount'] || row['amount'] || row['Loan Requirement Amount'] || '');
       if (!clientName || !phoneNumber) return;
 
       const existing = leads.find(l => l.phoneNumber === phoneNumber) || newLeads.find(l => l.phoneNumber === phoneNumber);
@@ -232,6 +233,7 @@ export default function FMDashboard() {
 
   const handleAddLead = async () => {
     if (!leadInput.clientName || !leadInput.phoneNumber || !leadInput.loanRequirement) { toast.error('Fill all fields'); return; }
+    if (!/^\d+$/.test(leadInput.phoneNumber)) { toast.error('Phone number must contain digits only'); return; }
     if (selectedBOs.length === 0) { toast.error('Select at least one BO'); return; }
     
     const duplicate = leads.find(l => l.phoneNumber === leadInput.phoneNumber);
@@ -242,7 +244,7 @@ export default function FMDashboard() {
         id: crypto.randomUUID(),
         clientName: leadInput.clientName,
         phoneNumber: leadInput.phoneNumber,
-        loanRequirement: Number(leadInput.loanRequirement),
+        loanRequirement: leadInput.loanRequirement,
         originalLeadId: duplicate.id,
         originalBoName: assignedBO?.name || 'Unknown',
         uploadedBy: users.find(u => u.id === undefined)?.name,
@@ -258,7 +260,7 @@ export default function FMDashboard() {
     const today = new Date().toISOString().split('T')[0];
     await addLeads([{
       id: `l${Date.now()}`, clientName: leadInput.clientName, phoneNumber: leadInput.phoneNumber,
-      loanRequirement: Number(leadInput.loanRequirement), numberStatus: '', leadStatus: '', leadType: '',
+      loanRequirement: leadInput.loanRequirement, numberStatus: '', leadStatus: '', leadType: '',
       assignedBOId: boId, assignedDate: today, meetingRequested: false, meetingApproved: false,
     }]);
     setLeadInput({ clientName: '', phoneNumber: '', loanRequirement: '' });
@@ -730,7 +732,12 @@ export default function FMDashboard() {
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-3 gap-4">
                 <div><Label>Client Name</Label><Input value={leadInput.clientName} onChange={e => setLeadInput(p => ({ ...p, clientName: e.target.value }))} /></div>
-                <div><Label>Phone Number</Label><Input value={leadInput.phoneNumber} onChange={e => setLeadInput(p => ({ ...p, phoneNumber: e.target.value }))} /></div>
+                <div><Label>Phone Number</Label><Input
+                  inputMode="numeric"
+                  value={leadInput.phoneNumber}
+                  onChange={e => setLeadInput(p => ({ ...p, phoneNumber: e.target.value.replace(/\D/g, '') }))}
+                  placeholder="e.g. 9876543210"
+                /></div>
                 <div><Label>Loan Requirement</Label><Input value={leadInput.loanRequirement} onChange={e => setLeadInput(p => ({ ...p, loanRequirement: e.target.value }))} placeholder="Amount or text" /></div>
               </div>
               <Button onClick={handleAddLead}><UploadIcon className="w-4 h-4 mr-2" />Add & Distribute Lead</Button>
