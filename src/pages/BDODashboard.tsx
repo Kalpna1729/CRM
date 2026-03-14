@@ -6,6 +6,7 @@ import DateRangeFilter from '@/components/DateRangeFilter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Meeting, BDOStatus, WalkingStatus } from '@/types/crm';
-import { ArrowLeft, Eye, User, Phone, Calendar as CalendarIcon, MapPin, Building, Briefcase, IndianRupee, FileText, CheckCircle2, XCircle, Clock, Users } from 'lucide-react';
+import { ArrowLeft, Eye, User, Phone, Calendar as CalendarIcon, MapPin, Building, Briefcase, IndianRupee, CheckCircle2, XCircle, Clock, Users, MessageSquare, Send, CalendarCheck } from 'lucide-react';
 
 const navItems = [
   { label: 'Pending Meetings', icon: <LayoutDashboard className="w-4 h-4" />, id: 'pending' },
@@ -29,7 +30,6 @@ export default function BDODashboard() {
   const [toDate, setToDate] = useState<Date | undefined>();
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [infoMeeting, setInfoMeeting] = useState<Meeting | null>(null);
-  const [walkinDateInput, setWalkinDateInput] = useState('');
 
   // Only show meetings assigned to this BDO (bdoId === currentUser.id)
   const allBdoMeetings = useMemo(() => {
@@ -74,7 +74,7 @@ export default function BDODashboard() {
   const handleSetWalkinDate = async (meetingId: string, date: string) => {
     if (!date) { toast.error('Select a date'); return; }
     await updateMeeting(meetingId, { walkinDate: date });
-    toast.success('Walking date set');
+    toast.success('Walk-in date set');
   };
 
   const handleWalkingDone = async (meeting: Meeting) => {
@@ -143,7 +143,7 @@ export default function BDODashboard() {
         <TableCell>
           <span className="font-semibold text-primary text-sm flex items-center gap-1">
             <IndianRupee className="w-3.5 h-3.5"/>
-            {(lead?.loanRequirement || 0).toLocaleString()}
+            {lead?.loanRequirement || '—'}
           </span>
         </TableCell>
         {showActions && (
@@ -178,18 +178,18 @@ export default function BDODashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50 border-b-2">
-                        <TableHead>Client Details</TableHead>
-                        <TableHead>Schedule</TableHead>
-                        <TableHead>Requirement</TableHead>
-                        <TableHead>Team</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Loan Amount</TableHead>
                         <TableHead className="text-right pr-6">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {getDetailMeetings().map(m => renderMeetingRow(m, true))}
                       {getDetailMeetings().length === 0 && (
-                        <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No meetings</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No meetings</TableCell></TableRow>
                       )}
                     </TableBody>
                   </Table>
@@ -216,25 +216,25 @@ export default function BDODashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50 border-b-2">
-                        <TableHead>Client Details</TableHead>
-                        <TableHead>Schedule</TableHead>
-                        <TableHead>Requirement</TableHead>
-                        <TableHead>Team</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Loan Amount</TableHead>
                         <TableHead className="text-right pr-6">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {pendingMeetings.map(m => renderMeetingRow(m, true))}
                       {pendingMeetings.length === 0 && (
-                        <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No pending meetings</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No pending meetings</TableCell></TableRow>
                       )}
                     </TableBody>
                   </Table>
                 </CardContent>
               </Card>
 
-              {/* Follow-up meetings with walking date actions */}
+              {/* Follow-up meetings */}
               {followUpMeetings.length > 0 && (
                 <Card>
                   <CardHeader><CardTitle className="text-base">Follow-up Meetings ({followUpMeetings.length})</CardTitle></CardHeader>
@@ -285,7 +285,7 @@ export default function BDODashboard() {
                 <TableBody>
                   {allBdoMeetings.map(m => renderMeetingRow(m, true))}
                   {allBdoMeetings.length === 0 && (
-                    <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No meetings</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No meetings</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -302,7 +302,7 @@ export default function BDODashboard() {
         title={selectedMeeting?.bdoStatus === 'Follow-up' ? 'Walking Done — Conversion Details' : 'Converted by BDM — Login Details'}
       />
 
-      {/* Info Dialog */}
+      {/* Enhanced Meeting Detail Dialog */}
       <MeetingDetailDialog
         isOpen={!!infoMeeting}
         meeting={infoMeeting}
@@ -366,8 +366,10 @@ function MeetingDetailDialog({
   onHandleWalkingDone: (m: Meeting) => void;
   onHandleWalkingInvalid: (id: string) => void;
 }) {
-  const { leads, users } = useCRM();
+  const { leads, users, meetingRemarks, addMeetingRemark, currentUser } = useCRM();
   const [walkinDateInput, setWalkinDateInput] = useState('');
+  const [newRemark, setNewRemark] = useState('');
+  const [submittingRemark, setSubmittingRemark] = useState(false);
 
   if (!meeting) return null;
   const lead = leads.find(l => l.id === meeting.leadId);
@@ -377,9 +379,38 @@ function MeetingDetailDialog({
   const isPending = meeting.status === 'Pending' && (!meeting.bdoStatus || meeting.bdoStatus.length === 0);
   const isFollowUp = meeting.bdoStatus === 'Follow-up';
 
+  // Remarks for this meeting, chronological order
+  const remarks = meetingRemarks.filter(r => r.meetingId === meeting.id);
+
+  const handleAddRemark = async () => {
+    if (!newRemark.trim()) { toast.error('Enter a remark'); return; }
+    setSubmittingRemark(true);
+    await addMeetingRemark(meeting.id, newRemark.trim(), currentUser?.name || 'BDO');
+    setNewRemark('');
+    setSubmittingRemark(false);
+    toast.success('Remark added');
+  };
+
+  const handleWalkInDone = () => {
+    onClose();
+    onHandleWalkingDone(meeting);
+  };
+
+  const handleWalkInInvalid = async () => {
+    onClose();
+    await onHandleWalkingInvalid(meeting.id);
+  };
+
+  const handleSetWalkin = async () => {
+    if (!walkinDateInput) { toast.error('Select a walk-in date'); return; }
+    await onHandleSetWalkinDate(meeting.id, walkinDateInput);
+    setWalkinDateInput('');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background border-border shadow-xl">
+        {/* Header */}
         <div className="bg-primary/5 p-6 border-b border-border/50 flex items-center justify-between relative">
           <div className="flex items-center gap-5">
             <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
@@ -404,36 +435,15 @@ function MeetingDetailDialog({
                 <Button size="sm" onClick={() => { onClose(); onHandleConverted(meeting); }}>Converted by BDM</Button>
               </div>
             )}
-            {isFollowUp && !meeting.walkingStatus && (
-              <div className="flex gap-2 items-center bg-background/50 p-1.5 rounded-lg border border-border/50">
-                {!meeting.walkinDate ? (
-                  <>
-                    <Input
-                      type="date"
-                      className="h-8 w-36 text-sm"
-                      value={walkinDateInput}
-                      onChange={e => setWalkinDateInput(e.target.value)}
-                    />
-                    <Button size="sm" variant="secondary" onClick={() => { onHandleSetWalkinDate(meeting.id, walkinDateInput); setWalkinDateInput(''); }}>Set Walk-in</Button>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-semibold mr-2 ml-1 text-primary flex items-center gap-1.5"><CalendarIcon className="w-4 h-4" /> Walk: {meeting.walkinDate}</span>
-                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => { onClose(); onHandleWalkingDone(meeting); }}>Walk Done</Button>
-                    <Button size="sm" variant="destructive" onClick={() => { onClose(); onHandleWalkingInvalid(meeting.id); }}>Invalid</Button>
-                  </>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[75vh] space-y-6">
+        <div className="p-6 overflow-y-auto max-h-[80vh] space-y-6">
           {/* Requirement & Product */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-card border border-border/60 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><IndianRupee className="w-4 h-4 text-primary/80"/> Required Amount</p>
-              <p className="text-2xl font-bold text-primary">₹{(lead?.loanRequirement || 0).toLocaleString()}</p>
+              <p className="text-2xl font-bold text-primary">₹{lead?.loanRequirement || '—'}</p>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><Briefcase className="w-4 h-4 text-primary/80"/> Product Type</p>
@@ -446,7 +456,7 @@ function MeetingDetailDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            {/* Extended Details Grid */}
+            {/* Location & Assets */}
             <div className="space-y-4 bg-muted/20 border border-border/50 rounded-xl p-5">
               <h3 className="text-sm font-bold text-foreground border-b border-border/50 pb-2 mb-3 flex items-center gap-2"><MapPin className="w-4 h-4 text-primary"/> Location & Assets</h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-5">
@@ -460,11 +470,11 @@ function MeetingDetailDialog({
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-1">Final Req.</p>
-                  <p className="text-sm font-semibold text-foreground">{meeting.finalRequirement != null ? `₹${meeting.finalRequirement.toLocaleString()}` : '—'}</p>
+                  <p className="text-sm font-semibold text-foreground">{meeting.finalRequirement ? `₹${meeting.finalRequirement}` : '—'}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-1">Collateral Value</p>
-                  <p className="text-sm font-semibold text-foreground">{meeting.collateralValue != null ? `₹${meeting.collateralValue.toLocaleString()}` : '—'}</p>
+                  <p className="text-sm font-semibold text-foreground">{meeting.collateralValue ? `₹${meeting.collateralValue}` : '—'}</p>
                 </div>
               </div>
             </div>
@@ -511,6 +521,112 @@ function MeetingDetailDialog({
                   </div>
                </div>
             </div>
+          </div>
+
+          {/* Walk-in Section — visible for Follow-Up meetings */}
+          {isFollowUp && (
+            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-5">
+              <h3 className="text-sm font-bold text-amber-800 dark:text-amber-400 mb-4 flex items-center gap-2">
+                <CalendarCheck className="w-4 h-4" /> Walk-in Management
+              </h3>
+
+              {/* Walk-in Date */}
+              <div className="flex items-end gap-3 mb-4">
+                <div className="flex-1">
+                  <Label className="text-xs font-semibold text-amber-700 dark:text-amber-500 mb-1 block">
+                    {meeting.walkinDate ? `Current Walk-in Date: ${meeting.walkinDate}` : 'Set Walk-in Date'}
+                  </Label>
+                  <Input
+                    type="date"
+                    className="h-9"
+                    value={walkinDateInput}
+                    onChange={e => setWalkinDateInput(e.target.value)}
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="border border-amber-300 bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-100 dark:hover:bg-amber-800"
+                  onClick={handleSetWalkin}
+                >
+                  {meeting.walkinDate ? 'Update Date' : 'Set Date'}
+                </Button>
+              </div>
+
+              {/* Walk-in Status buttons — shown once a date is set */}
+              {meeting.walkinDate && !meeting.walkingStatus && (
+                <div className="flex gap-3">
+                  <Button
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                    onClick={handleWalkInDone}
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Walk-in Done
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="flex-1 gap-2"
+                    onClick={handleWalkInInvalid}
+                  >
+                    <XCircle className="w-4 h-4" /> Invalid Walk-in
+                  </Button>
+                </div>
+              )}
+
+              {/* Walk-in status badge if already set */}
+              {meeting.walkingStatus && (
+                <Badge
+                  variant={meeting.walkingStatus === 'Walking Done' ? 'default' : 'destructive'}
+                  className="text-sm px-4 py-1"
+                >
+                  {meeting.walkingStatus === 'Walking Done' ? '✓ Walk-in Done' : '✗ Invalid Walk-in'}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Remarks Section */}
+          <div className="border border-border/60 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-primary" /> Remarks
+              {remarks.length > 0 && <Badge variant="secondary" className="ml-1">{remarks.length}</Badge>}
+            </h3>
+
+            {/* Existing remarks chronological */}
+            {remarks.length > 0 ? (
+              <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-1">
+                {remarks.map(r => (
+                  <div key={r.id} className="bg-muted/40 rounded-lg p-3 border border-border/40">
+                    <p className="text-sm text-foreground leading-relaxed">{r.remark}</p>
+                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                      <span className="font-medium">{r.createdBy}</span>
+                      <span>•</span>
+                      <span>{new Date(r.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground mb-4 italic">No remarks yet. Add the first one below.</p>
+            )}
+
+            {/* Add new remark */}
+            <div className="flex gap-2">
+              <Textarea
+                placeholder="Add a remark about this meeting..."
+                value={newRemark}
+                onChange={e => setNewRemark(e.target.value)}
+                className="flex-1 min-h-[80px] resize-none text-sm"
+                onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleAddRemark(); }}
+              />
+              <Button
+                onClick={handleAddRemark}
+                disabled={submittingRemark || !newRemark.trim()}
+                className="self-end gap-2"
+              >
+                <Send className="w-4 h-4" /> Add
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to submit</p>
           </div>
 
         </div>

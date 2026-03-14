@@ -44,6 +44,14 @@ export interface LeadRemark {
   updatedAt: string;
 }
 
+export interface MeetingRemark {
+  id: string;
+  meetingId: string;
+  remark: string;
+  createdBy: string;
+  createdAt: string;
+}
+
 export interface Meeting {
   id: string;
   leadId: string;

@@ -50,6 +50,30 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_remarks: {
+        Row: {
+          id: string
+          meeting_id: string
+          remark: string
+          created_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          meeting_id: string
+          remark: string
+          created_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          meeting_id?: string
+          remark?: string
+          created_by?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       lead_remarks: {
         Row: {
           created_at: string
