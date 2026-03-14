@@ -42,7 +42,7 @@ export default function BDODashboard() {
   // Pending = assigned by BDM with status 'Pending' but no BDO action yet
   const pendingMeetings = allBdoMeetings.filter(m => m.status === 'Pending' && (!m.bdoStatus || m.bdoStatus.length === 0));
   const convertedByBDM = allBdoMeetings.filter(m => m.bdoStatus === 'Converted by BDM');
-  const followUpMeetings = allBdoMeetings.filter(m => m.bdoStatus === 'Follow-up');
+  const followUpMeetings = allBdoMeetings.filter(m => m.bdoStatus === 'Follow-up' && m.walkingStatus !== 'Walking Done' && m.walkingStatus !== 'Invalid');
   const walkingDone = allBdoMeetings.filter(m => m.walkingStatus === 'Walking Done');
   const walkingInvalid = allBdoMeetings.filter(m => m.walkingStatus === 'Invalid');
   const totalConverted = allBdoMeetings.filter(m => m.bdoStatus === 'Converted by BDM' || m.walkingStatus === 'Walking Done');
@@ -378,6 +378,7 @@ function MeetingDetailDialog({
   const bdm = users.find(u => u.id === meeting.bdmId);
   const isPending = meeting.status === 'Pending' && (!meeting.bdoStatus || meeting.bdoStatus.length === 0);
   const isFollowUp = meeting.bdoStatus === 'Follow-up';
+  const isWalkinActive = isFollowUp && meeting.walkingStatus !== 'Walking Done' && meeting.walkingStatus !== 'Invalid';
 
   // Remarks for this meeting, chronological order
   const remarks = meetingRemarks.filter(r => r.meetingId === meeting.id);
@@ -529,8 +530,8 @@ function MeetingDetailDialog({
             </div>
           </div>
 
-          {/* Walk-in Section — visible for Follow-Up meetings */}
-          {isFollowUp && (
+          {/* Walk-in Section — active for Follow-Up meetings without a decision */}
+          {isWalkinActive && (
             <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-5">
               <h3 className="text-sm font-bold text-amber-800 dark:text-amber-400 mb-4 flex items-center gap-2">
                 <CalendarCheck className="w-4 h-4" /> Walk-in Management
@@ -593,8 +594,8 @@ function MeetingDetailDialog({
             </div>
           )}
 
-          {/* Remarks Section — Follow-Up only */}
-          {isFollowUp && (
+          {/* Remarks Section — Active Walk-in only */}
+          {isWalkinActive && (
             <div className="border border-border/60 rounded-xl p-5">
               <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-primary" /> Remarks
