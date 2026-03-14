@@ -584,50 +584,52 @@ function MeetingDetailDialog({
             </div>
           )}
 
-          {/* Remarks Section */}
-          <div className="border border-border/60 rounded-xl p-5">
-            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-primary" /> Remarks
-              {remarks.length > 0 && <Badge variant="secondary" className="ml-1">{remarks.length}</Badge>}
-            </h3>
+          {/* Remarks Section — Follow-Up only */}
+          {isFollowUp && (
+            <div className="border border-border/60 rounded-xl p-5">
+              <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-primary" /> Remarks
+                {remarks.length > 0 && <Badge variant="secondary" className="ml-1">{remarks.length}</Badge>}
+              </h3>
 
-            {/* Existing remarks chronological */}
-            {remarks.length > 0 ? (
-              <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-1">
-                {remarks.map(r => (
-                  <div key={r.id} className="bg-muted/40 rounded-lg p-3 border border-border/40">
-                    <p className="text-sm text-foreground leading-relaxed">{r.remark}</p>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                      <span className="font-medium">{r.createdBy}</span>
-                      <span>•</span>
-                      <span>{new Date(r.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              {/* Existing remarks chronological */}
+              {remarks.length > 0 ? (
+                <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-1">
+                  {remarks.map(r => (
+                    <div key={r.id} className="bg-muted/40 rounded-lg p-3 border border-border/40">
+                      <p className="text-sm text-foreground leading-relaxed">{r.remark}</p>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                        <span className="font-medium">{r.createdBy}</span>
+                        <span>•</span>
+                        <span>{new Date(r.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground mb-4 italic">No remarks yet. Add the first one below.</p>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground mb-4 italic">No remarks yet. Add the first one below.</p>
+              )}
 
-            {/* Add new remark */}
-            <div className="flex gap-2">
-              <Textarea
-                placeholder="Add a remark about this meeting..."
-                value={newRemark}
-                onChange={e => setNewRemark(e.target.value)}
-                className="flex-1 min-h-[80px] resize-none text-sm"
-                onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleAddRemark(); }}
-              />
-              <Button
-                onClick={handleAddRemark}
-                disabled={submittingRemark || !newRemark.trim()}
-                className="self-end gap-2"
-              >
-                <Send className="w-4 h-4" /> Add
-              </Button>
+              {/* Add new remark */}
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Add a remark about this meeting..."
+                  value={newRemark}
+                  onChange={e => setNewRemark(e.target.value)}
+                  className="flex-1 min-h-[80px] resize-none text-sm"
+                  onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) handleAddRemark(); }}
+                />
+                <Button
+                  onClick={handleAddRemark}
+                  disabled={submittingRemark || !newRemark.trim()}
+                  className="self-end gap-2"
+                >
+                  <Send className="w-4 h-4" /> Add
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to submit</p>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to submit</p>
-          </div>
+          )}
 
         </div>
       </DialogContent>
