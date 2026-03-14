@@ -366,7 +366,7 @@ function MeetingDetailDialog({
   onHandleWalkingDone: (m: Meeting) => void;
   onHandleWalkingInvalid: (id: string) => void;
 }) {
-  const { leads, users, meetingRemarks, addMeetingRemark, currentUser } = useCRM();
+  const { leads, users, meetingRemarks, addMeetingRemark, currentUser, updateMeeting } = useCRM();
   const [walkinDateInput, setWalkinDateInput] = useState('');
   const [newRemark, setNewRemark] = useState('');
   const [submittingRemark, setSubmittingRemark] = useState(false);
@@ -391,14 +391,20 @@ function MeetingDetailDialog({
     toast.success('Remark added');
   };
 
-  const handleWalkInDone = () => {
+  const handleWalkInDone = async () => {
+    await updateMeeting(meeting.id, {
+      walkingStatus: 'Walking Done',
+    });
+    toast.success('Walk-in marked as Done. Lead moved to Walk-in Done section.');
     onClose();
-    onHandleWalkingDone(meeting);
   };
 
   const handleWalkInInvalid = async () => {
+    await updateMeeting(meeting.id, {
+      walkingStatus: 'Invalid',
+    });
+    toast.success('Walk-in marked as Invalid. Lead moved to Invalid Walk-in section.');
     onClose();
-    await onHandleWalkingInvalid(meeting.id);
   };
 
   const handleSetWalkin = async () => {
@@ -553,7 +559,7 @@ function MeetingDetailDialog({
                 </Button>
               </div>
 
-              {/* Walk-in Status buttons — shown once a date is set */}
+              {/* Walk-in Status buttons — shown once a date is set and status not yet chosen */}
               {meeting.walkinDate && !meeting.walkingStatus && (
                 <div className="flex gap-3">
                   <Button
@@ -574,12 +580,15 @@ function MeetingDetailDialog({
 
               {/* Walk-in status badge if already set */}
               {meeting.walkingStatus && (
-                <Badge
-                  variant={meeting.walkingStatus === 'Walking Done' ? 'default' : 'destructive'}
-                  className="text-sm px-4 py-1"
-                >
-                  {meeting.walkingStatus === 'Walking Done' ? '✓ Walk-in Done' : '✗ Invalid Walk-in'}
-                </Badge>
+                <div className="flex items-center gap-3 mt-1">
+                  <Badge
+                    variant={meeting.walkingStatus === 'Walking Done' ? 'default' : 'destructive'}
+                    className="text-sm px-4 py-1.5"
+                  >
+                    {meeting.walkingStatus === 'Walking Done' ? '✓ Walk-in Done' : '✗ Invalid Walk-in'}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">Status already recorded</span>
+                </div>
               )}
             </div>
           )}
