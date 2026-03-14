@@ -1042,7 +1042,7 @@ export default function FMDashboard() {
               const allDoneMeetings = filteredMeetings.filter(m => m.status === 'Meeting Done');
               const convertedByBDM = allDoneMeetings.filter(m => m.bdoStatus === 'Converted by BDM');
               const followUps = allDoneMeetings.filter(m => m.bdoStatus === 'Follow-up');
-              const walkingDone = allDoneMeetings.filter(m => m.walkingStatus === 'Walking Done');
+              const walkingDone = allDoneMeetings.filter(m => m.walkingStatus === 'Walking Done' && m.bdoStatus !== 'Converted by BDM');
               const totalConverted = convertedByBDM.length + walkingDone.length;
               const pending = allDoneMeetings.filter(m => !m.bdoStatus || m.bdoStatus.length === 0).length;
               return (
