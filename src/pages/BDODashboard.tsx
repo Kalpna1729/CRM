@@ -395,6 +395,7 @@ function MeetingDetailDialog({
   const handleWalkInDone = async () => {
     await updateMeeting(meeting.id, {
       walkingStatus: 'Walking Done',
+      bdoStatus: 'Walk-in Done',
     });
     toast.success('Walk-in marked as Done. Lead moved to Walk-in Done section.');
     onClose();
@@ -519,6 +520,12 @@ function MeetingDetailDialog({
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">BDO Status</p>
                   {meeting.bdoStatus ? <Badge variant="default" className="bg-blue-600 hover:bg-blue-700 shadow-sm">{meeting.bdoStatus}</Badge> : <span className="text-sm font-medium text-muted-foreground">—</span>}
                </div>
+               {meeting.bdoStatus === 'Walk-in Done' && meeting.walkinDate && (
+                 <div>
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Walk-in Date</p>
+                    <span className="text-sm font-semibold">{new Date(meeting.walkinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                 </div>
+               )}
                <div>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Logins</p>
                   <div className="flex flex-col gap-1.5 items-start">
