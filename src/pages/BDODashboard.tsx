@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useCRM } from '@/contexts/CRMContext';
 import DashboardLayout, { LayoutDashboard, Calendar } from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
@@ -79,7 +79,11 @@ export default function BDODashboard() {
   };
 
   const handleWalkingDone = async (meeting: Meeting) => {
-    setSelectedMeeting(meeting);
+    await updateMeeting(meeting.id, {
+      walkingStatus: 'Walking Done',
+      bdoStatus: 'Walk-in Done',
+    });
+    toast.success('Walk-in marked as Done. Use "Login Status Update" in View Details to convert.');
   };
 
   const handleSaveWalkingConversion = async (miniLogin: boolean, fullLogin: boolean) => {
