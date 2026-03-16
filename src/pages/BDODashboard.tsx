@@ -42,7 +42,7 @@ export default function BDODashboard() {
 
   // Pending = assigned by BDM with status 'Pending' but no BDO action yet
   const pendingMeetings = allBdoMeetings.filter(m => m.status === 'Pending' && (!m.bdoStatus || m.bdoStatus.length === 0));
-  const convertedByBDM = allBdoMeetings.filter(m => m.bdoStatus === 'Converted by BDM');
+  const convertedByBDM = allBdoMeetings.filter(m => m.bdoStatus === 'Converted by BDM' || m.status === 'Converted');
   const followUpMeetings = allBdoMeetings.filter(m => m.bdoStatus === 'Follow-up' && m.walkingStatus !== 'Walking Done' && m.walkingStatus !== 'Invalid');
   const walkingDone = allBdoMeetings.filter(m => m.walkingStatus === 'Walking Done' && m.bdoStatus !== 'Converted by BDM');
   const walkingInvalid = allBdoMeetings.filter(m => m.walkingStatus === 'Invalid');
