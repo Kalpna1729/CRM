@@ -366,10 +366,12 @@ function MeetingDetailDialog({
   onHandleWalkingDone: (m: Meeting) => void;
   onHandleWalkingInvalid: (id: string) => void;
 }) {
-  const { leads, users, meetingRemarks, addMeetingRemark, currentUser, updateMeeting } = useCRM();
+  const { leads, users, meetingRemarks, loginHistory, addMeetingRemark, addLoginUpdate, currentUser, updateMeeting } = useCRM();
   const [walkinDateInput, setWalkinDateInput] = useState('');
   const [newRemark, setNewRemark] = useState('');
   const [submittingRemark, setSubmittingRemark] = useState(false);
+  const [loginType, setLoginType] = useState<'Mini Login' | 'Full Login' | 'Both'>('Mini Login');
+  const [submittingLogin, setSubmittingLogin] = useState(false);
 
   if (!meeting) return null;
   const lead = leads.find(l => l.id === meeting.leadId);
@@ -378,10 +380,21 @@ function MeetingDetailDialog({
   const bdm = users.find(u => u.id === meeting.bdmId);
   const isPending = meeting.status === 'Pending' && (!meeting.bdoStatus || meeting.bdoStatus.length === 0);
   const isFollowUp = meeting.bdoStatus === 'Follow-up';
+  const isWalkinDone = meeting.bdoStatus === 'Walk-in Done';
+  const isConverted = meeting.bdoStatus === 'Converted by BDM';
+  
   const isWalkinActive = isFollowUp && meeting.walkingStatus !== 'Walking Done' && meeting.walkingStatus !== 'Invalid';
+  const showRemarks = isFollowUp || isWalkinDone || isConverted;
+  const showLoginUpdate = isWalkinDone || isConverted;
 
-  // Remarks for this meeting, chronological order
-  const remarks = meetingRemarks.filter(r => r.meetingId === meeting.id);
+  // Remarks for this meeting, chronological order (latest on top)
+  const remarks = meetingRemarks
+    .filter(r => r.meetingId === meeting.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const meetingLoginHistory = loginHistory
+    .filter(h => h.meetingId === meeting.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const handleAddRemark = async () => {
     if (!newRemark.trim()) { toast.error('Enter a remark'); return; }
@@ -413,6 +426,13 @@ function MeetingDetailDialog({
     if (!walkinDateInput) { toast.error('Select a walk-in date'); return; }
     await onHandleSetWalkinDate(meeting.id, walkinDateInput);
     setWalkinDateInput('');
+  };
+
+  const handleLoginUpdate = async () => {
+    setSubmittingLogin(true);
+    await addLoginUpdate(meeting.id, loginType, currentUser?.name || 'BDO');
+    setSubmittingLogin(false);
+    toast.success(`Login Status updated to ${loginType}. Moving to Converted section.`);
   };
 
   return (
@@ -601,8 +621,8 @@ function MeetingDetailDialog({
             </div>
           )}
 
-          {/* Remarks Section — Active Walk-in only */}
-          {isWalkinActive && (
+          {/* Remarks Section */}
+          {showRemarks && (
             <div className="border border-border/60 rounded-xl p-5">
               <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-primary" /> Remarks
@@ -616,7 +636,7 @@ function MeetingDetailDialog({
                     <div key={r.id} className="bg-muted/40 rounded-lg p-3 border border-border/40">
                       <p className="text-sm text-foreground leading-relaxed">{r.remark}</p>
                       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                        <span className="font-medium">{r.createdBy}</span>
+                        <span className="font-medium text-primary/80">{r.createdBy}</span>
                         <span>•</span>
                         <span>{new Date(r.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
@@ -645,6 +665,60 @@ function MeetingDetailDialog({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to submit</p>
+            </div>
+          )}
+
+          {/* Login Status Update Section */}
+          {showLoginUpdate && (
+            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-5 space-y-4">
+              <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-2">
+                <CalendarCheck className="w-4 h-4" /> Login Status Update
+              </h3>
+
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <Label className="text-xs font-semibold text-emerald-700 dark:text-emerald-500 mb-1 block">Update Login Status</Label>
+                  <Select value={loginType} onValueChange={(v: any) => setLoginType(v)}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Mini Login">Mini Login</SelectItem>
+                      <SelectItem value="Full Login">Full Login</SelectItem>
+                      <SelectItem value="Both">Both</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={handleLoginUpdate} 
+                  disabled={submittingLogin}
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  Update & Convert
+                </Button>
+              </div>
+
+              {/* Login History */}
+              {meetingLoginHistory.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-emerald-200/50 dark:border-emerald-800/50">
+                  <p className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider mb-3">Login History</p>
+                  <div className="space-y-2">
+                    {meetingLoginHistory.map(h => (
+                      <div key={h.id} className="flex items-center justify-between bg-white/50 dark:bg-black/20 p-2 rounded border border-emerald-100 dark:border-emerald-900/50 text-xs">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="font-bold text-emerald-900 dark:text-emerald-100">{h.loginType}</span>
+                        </div>
+                        <div className="text-right text-[10px] text-muted-foreground">
+                          <p className="font-medium text-emerald-800/70 dark:text-emerald-400/70">Updated by {h.createdBy}</p>
+                          <p>{new Date(h.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

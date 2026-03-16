@@ -235,11 +235,11 @@ export default function FMDashboard() {
     if (!leadInput.clientName || !leadInput.phoneNumber || !leadInput.loanRequirement) { toast.error('Fill all fields'); return; }
     if (!/^\d+$/.test(leadInput.phoneNumber)) { toast.error('Phone number must contain digits only'); return; }
     if (selectedBOs.length === 0) { toast.error('Select at least one BO'); return; }
-    
+
     const duplicate = leads.find(l => l.phoneNumber === leadInput.phoneNumber);
     if (duplicate) {
       const assignedBO = users.find(u => u.id === duplicate.assignedBOId);
-      
+
       const dupeObj: DuplicateLead = {
         id: crypto.randomUUID(),
         clientName: leadInput.clientName,
@@ -250,7 +250,7 @@ export default function FMDashboard() {
         uploadedBy: users.find(u => u.id === undefined)?.name,
         uploadedAt: new Date().toISOString()
       };
-      
+
       // Detected duplicate, prompt for confirmation instead of rejecting
       setPendingUpload({ newLeads: [], dupes: [dupeObj], isManual: true });
       return;
@@ -1153,7 +1153,7 @@ export default function FMDashboard() {
               if (pendingUpload) {
                 await addLeads(pendingUpload.newLeads, pendingUpload.dupes);
                 setPendingUpload(null);
-                
+
                 if (pendingUpload.isManual) {
                   setLeadInput({ clientName: '', phoneNumber: '', loanRequirement: '' });
                   toast.success('Lead recorded in Duplicate Leads folder');

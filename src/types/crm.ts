@@ -15,7 +15,7 @@ export type LeadStatus = 'Interested' | 'Not Interested' | 'Eligible' | 'Not Eli
 export type LeadType = 'Client' | 'DSA' | '';
 export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject';
 export type MeetingStatus = 'Scheduled' | 'Meeting Done' | 'Not Done' | 'Pending' | 'Reject' | 'Converted' | 'Follow-Up' | '';
-export type BDOStatus = 'Converted by BDM' | 'Follow-up' | '';
+export type BDOStatus = 'Converted by BDM' | 'Walk-in Done' | 'Follow-up' | '';
 export type WalkingStatus = 'Walking Done' | 'Invalid' | '';
 export type ProductType = 'Term Loan' | 'Equity' | 'Term+Equity' | 'Unsecure' | 'Project Funding' | '';
 
@@ -48,6 +48,14 @@ export interface MeetingRemark {
   id: string;
   meetingId: string;
   remark: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface LoginHistory {
+  id: string;
+  meetingId: string;
+  loginType: 'Mini Login' | 'Full Login' | 'Both';
   createdBy: string;
   createdAt: string;
 }

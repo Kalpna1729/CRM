@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { User, Lead, Team, Meeting, MeetingRequest, LeadRemark, DuplicateLead, MeetingRemark } from '@/types/crm';
+import { User, Lead, Team, Meeting, MeetingRequest, LeadRemark, DuplicateLead, MeetingRemark, LoginHistory } from '@/types/crm';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CRMContextType {
@@ -12,6 +12,7 @@ interface CRMContextType {
   leadRemarks: LeadRemark[];
   duplicateLeads: DuplicateLead[];
   meetingRemarks: MeetingRemark[];
+  loginHistory: LoginHistory[];
   loading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -35,6 +36,7 @@ interface CRMContextType {
   deleteDuplicateLead: (id: string) => Promise<void>;
   mergeDuplicateLead: (duplicateId: string) => Promise<void>;
   addMeetingRemark: (meetingId: string, remark: string, createdBy: string) => Promise<void>;
+  addLoginUpdate: (meetingId: string, loginType: LoginHistory['loginType'], createdBy: string) => Promise<void>;
 }
 
 const CRMContext = createContext<CRMContextType | null>(null);
@@ -95,6 +97,11 @@ const mapMeetingRemark = (r: any): MeetingRemark => ({
   createdBy: r.created_by, createdAt: r.created_at,
 });
 
+const mapLoginHistory = (r: any): LoginHistory => ({
+  id: r.id, meetingId: r.meeting_id, loginType: r.login_type,
+  createdBy: r.created_by, createdAt: r.created_at,
+});
+
 export function CRMProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -105,11 +112,12 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const [leadRemarks, setLeadRemarks] = useState<LeadRemark[]>([]);
   const [duplicateLeads, setDuplicateLeads] = useState<DuplicateLead[]>([]);
   const [meetingRemarks, setMeetingRemarks] = useState<MeetingRemark[]>([]);
+  const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const initialized = useRef(false);
 
   const fetchAllData = useCallback(async () => {
-    const [profilesRes, teamsRes, membersRes, leadsRes, meetingsRes, reqsRes, remarksRes, dupsRes, meetingRemarksRes] = await Promise.all([
+    const [profilesRes, teamsRes, membersRes, leadsRes, meetingsRes, reqsRes, remarksRes, dupsRes, meetingRemarksRes, loginHistoryRes] = await Promise.all([
       supabase.from('profiles').select('*'),
       supabase.from('teams').select('*'),
       supabase.from('team_members').select('*'),
@@ -118,7 +126,8 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       supabase.from('meeting_requests').select('*'),
       supabase.from('lead_remarks').select('*').order('created_at', { ascending: false }),
       supabase.from('duplicate_leads').select('*').order('uploaded_at', { ascending: false }),
-      supabase.from('meeting_remarks').select('*').order('created_at', { ascending: true }),
+      supabase.from('meeting_remarks').select('*').order('created_at', { ascending: false }),
+      (supabase as any).from('login_history').select('*').order('created_at', { ascending: false }),
     ]);
 
     if (profilesRes.data) setUsers(profilesRes.data.map(mapProfile));
@@ -128,6 +137,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     if (remarksRes.data) setLeadRemarks(remarksRes.data.map(mapRemark));
     if (dupsRes.data) setDuplicateLeads(dupsRes.data.map(mapDuplicateLead));
     if (meetingRemarksRes.data) setMeetingRemarks(meetingRemarksRes.data.map(mapMeetingRemark));
+    if (loginHistoryRes.data) setLoginHistory(loginHistoryRes.data.map(mapLoginHistory));
 
     if (teamsRes.data && membersRes.data) {
       const builtTeams: Team[] = teamsRes.data.map((t: any) => ({
@@ -172,6 +182,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => fetchAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'duplicate_leads' }, () => fetchAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'meeting_remarks' }, () => fetchAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'login_history' } as any, () => fetchAllData())
       .subscribe();
 
     return () => {
@@ -460,9 +471,28 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     await fetchAllData();
   }, [fetchAllData]);
 
+  const addLoginUpdate = useCallback(async (meetingId: string, loginType: LoginHistory['loginType'], createdBy: string) => {
+    await (supabase as any).from('login_history').insert({
+      meeting_id: meetingId,
+      login_type: loginType,
+      created_by: createdBy,
+    });
+    // Update the meeting boolean fields and auto-convert to 'Converted by BDM'
+    const updates: any = { bdoStatus: 'Converted by BDM' };
+    if (loginType === 'Mini Login') updates.miniLogin = true;
+    if (loginType === 'Full Login') updates.fullLogin = true;
+    if (loginType === 'Both') { updates.miniLogin = true; updates.fullLogin = true; }
+    await supabase.from('meetings').update({
+      bdo_status: updates.bdoStatus,
+      ...(updates.miniLogin !== undefined && { mini_login: updates.miniLogin }),
+      ...(updates.fullLogin !== undefined && { full_login: updates.fullLogin }),
+    }).eq('id', meetingId);
+    await fetchAllData();
+  }, [fetchAllData]);
+
   return (
     <CRMContext.Provider value={{
-      currentUser, users, leads, teams, meetings, meetingRequests, leadRemarks, duplicateLeads, meetingRemarks, loading,
+      currentUser, users, leads, teams, meetings, meetingRequests, leadRemarks, duplicateLeads, meetingRemarks, loginHistory, loading,
       login, logout, refreshData,
       addLeads, updateLead,
       addUser, updateUser, removeUser,
@@ -471,7 +501,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       addMeetingRequest, updateMeetingRequest,
       addRemark, updateRemark, deleteRemark,
       deleteDuplicateLead, mergeDuplicateLead,
-      addMeetingRemark,
+      addMeetingRemark, addLoginUpdate,
     }}>
       {children}
     </CRMContext.Provider>
