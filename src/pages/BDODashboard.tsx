@@ -380,12 +380,14 @@ function MeetingDetailDialog({
   const bdm = users.find(u => u.id === meeting.bdmId);
   const isPending = meeting.status === 'Pending' && (!meeting.bdoStatus || meeting.bdoStatus.length === 0);
   const isFollowUp = meeting.bdoStatus === 'Follow-up';
-  const isWalkinDone = meeting.bdoStatus === 'Walk-in Done';
+  // A lead is "walk-in done" if bdoStatus is 'Walk-in Done' OR walkingStatus is 'Walking Done'
+  const isWalkinDone = meeting.bdoStatus === 'Walk-in Done' || meeting.walkingStatus === 'Walking Done';
   const isConverted = meeting.bdoStatus === 'Converted by BDM';
   
   const isWalkinActive = isFollowUp && meeting.walkingStatus !== 'Walking Done' && meeting.walkingStatus !== 'Invalid';
   const showRemarks = isFollowUp || isWalkinDone || isConverted;
-  const showLoginUpdate = isWalkinDone || isConverted;
+  // Show Login Update ONLY for Walk-in Done leads (not for Total Converted)
+  const showLoginUpdate = isWalkinDone && !isConverted;
 
   // Remarks for this meeting, chronological order (latest on top)
   const remarks = meetingRemarks
