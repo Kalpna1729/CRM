@@ -143,8 +143,16 @@ export default function MeetingDetailDialog({
   const handleLoginUpdate = async () => {
     setSubmittingLogin(true);
     await addLoginUpdate(meeting.id, loginType, currentUser?.name || 'User');
+    
+    // Also update the main meeting record with the login flags and the new Converted status
+    await updateMeeting(meeting.id, {
+      bdoStatus: 'Converted',
+      miniLogin: loginType === 'Mini Login' || loginType === 'Both',
+      fullLogin: loginType === 'Full Login' || loginType === 'Both',
+    });
+    
     setSubmittingLogin(false);
-    toast.success(`Login Status updated to ${loginType}.`);
+    toast.success(`Login Status updated to ${loginType}. Marked as Converted.`);
   };
 
   const formatDate = (dateStr: string) =>

@@ -15,7 +15,7 @@ export type LeadStatus = 'Interested' | 'Not Interested' | 'Eligible' | 'Not Eli
 export type LeadType = 'Client' | 'DSA' | '';
 export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject';
 export type MeetingStatus = 'Scheduled' | 'Meeting Done' | 'Not Done' | 'Pending' | 'Reject' | 'Converted' | 'Follow-Up' | '';
-export type BDOStatus = 'Converted by BDM' | 'Walk-in Done' | 'Follow-up' | '';
+export type BDOStatus = 'Converted by BDM' | 'Converted' | 'Walk-in Done' | 'Follow-up' | '';
 export type WalkingStatus = 'Walking Done' | 'Invalid' | '';
 export type ProductType = 'Term Loan' | 'Equity' | 'Term+Equity' | 'Unsecure' | 'Project Funding' | '';
 
