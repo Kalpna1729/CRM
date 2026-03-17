@@ -44,9 +44,9 @@ export default function BDODashboard() {
   const pendingMeetings = allBdoMeetings.filter(m => m.status === 'Pending' && (!m.bdoStatus || m.bdoStatus.length === 0));
   const convertedByBDM = allBdoMeetings.filter(m => m.bdoStatus === 'Converted by BDM');
   const followUpMeetings = allBdoMeetings.filter(m => m.bdoStatus === 'Follow-up' && m.walkingStatus !== 'Walking Done' && m.walkingStatus !== 'Invalid');
-  const walkingDone = allBdoMeetings.filter(m => m.walkingStatus === 'Walking Done' && m.bdoStatus !== 'Converted by BDM');
+  const walkingDone = allBdoMeetings.filter(m => m.bdoStatus === 'Walk-in Done');
   const walkingInvalid = allBdoMeetings.filter(m => m.walkingStatus === 'Invalid');
-  const totalConverted = allBdoMeetings.filter(m => m.bdoStatus === 'Converted by BDM' || m.walkingStatus === 'Walking Done');
+  const totalConverted = allBdoMeetings.filter(m => m.bdoStatus === 'Converted by BDM' || m.bdoStatus === 'Converted');
 
   const handleConvertedByBDM = async (meeting: Meeting) => {
     setSelectedMeeting(meeting);
