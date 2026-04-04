@@ -19,7 +19,7 @@ interface CRMContextType {
   refreshData: () => Promise<void>;
   addLeads: (newLeads: Lead[], duplicates?: DuplicateLead[]) => Promise<void>;
   updateLead: (leadId: string, updates: Partial<Lead>) => Promise<void>;
-  addUser: (user: User) => Promise<void>;
+  addUser: (user: User, password: string) => Promise<void>;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   removeUser: (userId: string) => Promise<void>;
   addTeam: (team: Team) => Promise<void>;
@@ -52,6 +52,7 @@ const mapLead = (l: any): Lead => ({
   numberStatus: l.number_status || '', leadStatus: l.lead_status || '',
   leadType: l.lead_type || '', assignedBOId: l.assigned_bo_id,
   assignedDate: l.assigned_date, meetingRequested: l.meeting_requested,
+  meetingRejected: l.meeting_rejected,
   meetingApproved: l.meeting_approved, meetingId: l.meeting_id || undefined,
 });
 
@@ -172,17 +173,43 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => { });
 
+    function applyEvent<T extends { id: string }>(
+      prev: T[],
+      payload: { eventType: string; new: any; old: any },
+      mapper: (row: any) => T
+    ): T[] {
+      const { eventType, new: newRow, old: oldRow } = payload;
+      if (eventType === 'INSERT') return [...prev, mapper(newRow)];
+      if (eventType === 'UPDATE') return prev.map(item => item.id === newRow.id ? mapper(newRow) : item);
+      if (eventType === 'DELETE') return prev.filter(item => item.id !== oldRow.id);
+      return prev;
+    }
+
     const channel = supabase.channel('crm-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => fetchAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, () => fetchAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'meeting_requests' }, () => fetchAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_remarks' }, () => fetchAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
+        setLeads(prev => applyEvent(prev, payload as any, mapLead));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, (payload) => {
+        setMeetings(prev => applyEvent(prev, payload as any, mapMeeting));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meeting_requests' }, (payload) => {
+        setMeetingRequests(prev => applyEvent(prev, payload as any, mapMeetingRequest));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_remarks' }, (payload) => {
+        setLeadRemarks(prev => applyEvent(prev, payload as any, mapRemark));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'duplicate_leads' }, (payload) => {
+        setDuplicateLeads(prev => applyEvent(prev, payload as any, mapDuplicateLead));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meeting_remarks' }, (payload) => {
+        setMeetingRemarks(prev => applyEvent(prev, payload as any, mapMeetingRemark));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'login_history' } as any, (payload) => {
+        setLoginHistory(prev => applyEvent(prev, payload as any, mapLoginHistory));
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => fetchAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => fetchAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'duplicate_leads' }, () => fetchAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'meeting_remarks' }, () => fetchAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'login_history' } as any, () => fetchAllData())
       .subscribe();
 
     return () => {
@@ -225,8 +252,6 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   //   return false;
   // }, []);
   const login = useCallback(async (username: string, password: string) => {
-    const email = username;
-
     const { data: profiles } = await supabase
       .from('profiles')
       .select('*')
@@ -238,19 +263,12 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     if (!profile.active) return false;
 
     const { data: signInData, error: signInError } =
-      await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      await supabase.auth.signInWithPassword({ email: username, password });
 
     if (!signInError && signInData?.user) {
       if (!profile.authId) {
-        await supabase
-          .from('profiles')
-          .update({ auth_id: signInData.user.id })
-          .eq('id', profile.id);
+        await supabase.from('profiles').update({ auth_id: signInData.user.id }).eq('id', profile.id);
       }
-
       setCurrentUser(profile);
       return true;
     }
@@ -299,17 +317,24 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     if (updates.leadType !== undefined) dbUpdates.lead_type = updates.leadType;
     if (updates.meetingRequested !== undefined) dbUpdates.meeting_requested = updates.meetingRequested;
     if (updates.meetingApproved !== undefined) dbUpdates.meeting_approved = updates.meetingApproved;
+    if (updates.meetingRejected !== undefined) dbUpdates.meeting_rejected = updates.meetingRejected;
     if (updates.meetingId !== undefined) dbUpdates.meeting_id = updates.meetingId;
     if (updates.address !== undefined) dbUpdates.address = updates.address;
     await supabase.from('leads').update(dbUpdates).eq('id', leadId);
-    await fetchAllData();
-  }, [fetchAllData]);
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, ...updates } : l));
+  }, []);
 
-  const addUser = useCallback(async (user: User) => {
-    await supabase.from('profiles').insert({
-      id: user.id, name: user.name, username: user.username,
-      role: user.role, active: user.active, team_id: user.teamId || null,
+  const addUser = useCallback(async (user: User, password: string) => {
+    const { error } = await supabase.functions.invoke('create-user', {
+      body: {
+        name: user.name,
+        username: user.username,
+        password: password,
+        role: user.role,
+        teamId: user.teamId || null,
+      },
     });
+    if (error) throw new Error(error.message);
     await fetchAllData();
   }, [fetchAllData]);
 
@@ -325,8 +350,10 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   }, [fetchAllData]);
 
   const removeUser = useCallback(async (userId: string) => {
-    await supabase.from('profiles').delete().eq('id', userId);
-    await supabase.from('team_members').delete().eq('bo_id', userId);
+    const { error } = await supabase.functions.invoke('delete-user', {
+      body: { userId },
+    });
+    if (error) throw new Error(error.message);
     await fetchAllData();
   }, [fetchAllData]);
 
@@ -392,8 +419,8 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       final_requirement: meeting.finalRequirement ?? null,
       collateral_value: meeting.collateralValue ?? null,
     });
-    await fetchAllData();
-  }, [fetchAllData]);
+    setMeetings(prev => [...prev, meeting]);
+  }, []);
 
   const updateMeeting = useCallback(async (meetingId: string, updates: Partial<Meeting>) => {
     const dbUpdates: any = {};
@@ -415,61 +442,61 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     if (updates.finalRequirement !== undefined) dbUpdates.final_requirement = updates.finalRequirement;
     if (updates.collateralValue !== undefined) dbUpdates.collateral_value = updates.collateralValue;
     await supabase.from('meetings').update(dbUpdates).eq('id', meetingId);
-    await fetchAllData();
-  }, [fetchAllData]);
+    setMeetings(prev => prev.map(m => m.id === meetingId ? { ...m, ...updates } : m));
+  }, []);
 
   const addMeetingRequest = useCallback(async (req: MeetingRequest) => {
     await supabase.from('meeting_requests').insert({
       id: req.id, lead_id: req.leadId, bo_id: req.boId,
       tc_id: req.tcId, status: req.status,
     });
-    await fetchAllData();
-  }, [fetchAllData]);
+    setMeetingRequests(prev => [...prev, req]);
+  }, []);
 
   const updateMeetingRequest = useCallback(async (reqId: string, updates: Partial<MeetingRequest>) => {
     const dbUpdates: any = {};
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     await supabase.from('meeting_requests').update(dbUpdates).eq('id', reqId);
-    await fetchAllData();
-  }, [fetchAllData]);
+    setMeetingRequests(prev => prev.map(r => r.id === reqId ? { ...r, ...updates } : r));
+  }, []);
 
   const addRemark = useCallback(async (remark: Omit<LeadRemark, 'id' | 'updatedAt'>) => {
-    await supabase.from('lead_remarks').insert({
-      lead_id: remark.leadId, remark: remark.remark, created_by: remark.createdBy,
-    });
-    await fetchAllData();
-  }, [fetchAllData]);
+    const { data } = await supabase
+      .from('lead_remarks')
+      .insert({ lead_id: remark.leadId, remark: remark.remark, created_by: remark.createdBy })
+      .select().single();
+    if (data) setLeadRemarks(prev => [mapRemark(data), ...prev]);
+  }, []);
 
   const updateRemark = useCallback(async (remarkId: string, newText: string) => {
     await supabase.from('lead_remarks').update({ remark: newText, updated_at: new Date().toISOString() }).eq('id', remarkId);
-    await fetchAllData();
-  }, [fetchAllData]);
+    setLeadRemarks(prev => prev.map(r => r.id === remarkId ? { ...r, remark: newText } : r));
+  }, []);
 
   const deleteRemark = useCallback(async (remarkId: string) => {
     await supabase.from('lead_remarks').delete().eq('id', remarkId);
-    await fetchAllData();
-  }, [fetchAllData]);
+    setLeadRemarks(prev => prev.filter(r => r.id !== remarkId));
+  }, []);
 
   const deleteDuplicateLead = useCallback(async (id: string) => {
     await supabase.from('duplicate_leads').delete().eq('id', id);
-    await fetchAllData();
-  }, [fetchAllData]);
+    setDuplicateLeads(prev => prev.filter(d => d.id !== id));
+  }, []);
 
   const mergeDuplicateLead = useCallback(async (duplicateId: string) => {
     // Merging means the duplicate is resolved: simply remove the duplicate record.
     // The original lead remains as the canonical entry.
     await supabase.from('duplicate_leads').delete().eq('id', duplicateId);
-    await fetchAllData();
-  }, [fetchAllData]);
+    setDuplicateLeads(prev => prev.filter(d => d.id !== duplicateId));
+  }, []);
 
   const addMeetingRemark = useCallback(async (meetingId: string, remark: string, createdBy: string) => {
-    await supabase.from('meeting_remarks').insert({
-      meeting_id: meetingId,
-      remark,
-      created_by: createdBy,
-    });
-    await fetchAllData();
-  }, [fetchAllData]);
+    const { data } = await supabase
+      .from('meeting_remarks')
+      .insert({ meeting_id: meetingId, remark, created_by: createdBy })
+      .select().single();
+    if (data) setMeetingRemarks(prev => [mapMeetingRemark(data), ...prev]);
+  }, []);
 
   const addLoginUpdate = useCallback(async (meetingId: string, loginType: LoginHistory['loginType'], createdBy: string) => {
     await (supabase as any).from('login_history').insert({

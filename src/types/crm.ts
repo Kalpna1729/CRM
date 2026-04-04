@@ -13,8 +13,10 @@ export interface User {
 export type NumberStatus = 'Connected' | 'Not Connected' | 'Mobile Off' | 'Incoming Barred' | 'Invalid Number' | '';
 export type LeadStatus = 'Interested' | 'Not Interested' | 'Eligible' | 'Not Eligible' | 'Pending' | 'Language Barrier' | 'Ringing' | '';
 export type LeadType = 'Client' | 'DSA' | '';
-export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject';
-export type MeetingStatus = 'Scheduled' | 'Meeting Done' | 'Not Done' | 'Pending' | 'Reject' | 'Converted' | 'Follow-Up' | '';
+// export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject';
+export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject' | 'Scheduled' | 'Reschedule Requested';
+export type MeetingStatus = 'Scheduled' | 'Meeting Done' | 'Pending' | 'Reject' | 'Not Done' | 'Converted' | 'Follow-Up' | 'Reschedule Requested';
+// export type MeetingStatus = 'Scheduled' | 'Meeting Done' | 'Not Done' | 'Pending' | 'Reject' | 'Converted' | 'Follow-Up' | '';
 export type BDOStatus = 'Converted by BDM' | 'Converted' | 'Walk-in Done' | 'Follow-up' | '';
 export type WalkingStatus = 'Walking Done' | 'Invalid' | '';
 export type ProductType = 'Term Loan' | 'Equity' | 'Term+Equity' | 'Unsecure' | 'Project Funding' | '';
@@ -30,6 +32,7 @@ export interface Lead {
   leadType: LeadType;
   assignedBOId: string;
   assignedDate: string;
+  meetingRejected?: boolean;
   meetingRequested: boolean;
   meetingApproved: boolean;
   meetingId?: string;

@@ -1,5 +1,8 @@
-import { useState, useMemo, useRef } from 'react';
+import React from "react";
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useCRM } from '@/contexts/CRMContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useLoading } from '@/hooks/use-loading';
 import DashboardLayout, { LayoutDashboard, Users, Upload, Calendar, UserCircle, BarChart3, FolderOpen, Briefcase } from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import DateRangeFilter from '@/components/DateRangeFilter';
@@ -20,6 +23,9 @@ import { Plus, Trash2, Upload as UploadIcon, ChevronDown, ChevronRight, Edit2, U
 import * as XLSX from 'xlsx';
 import { DoubleConfirmModal } from '@/components/ui/DoubleConfirmModal';
 
+
+
+
 const navItems = [
   { label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, id: 'dashboard' },
   { label: 'User Management', icon: <Users className="w-4 h-4" />, id: 'users' },
@@ -32,12 +38,27 @@ const navItems = [
 
 export default function FMDashboard() {
   const { users, leads, teams, meetings, duplicateLeads, addUser, updateUser, removeUser, addLeads, addTeam, updateTeam, updateTeamMembers, deleteTeam, deleteDuplicateLead, mergeDuplicateLead } = useCRM();
+  // loader
+  const { withLoading, isLoading } = useLoading();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [expandedTC, setExpandedTC] = useState<string | null>(null);
   const [showConnectedDetail, setShowConnectedDetail] = useState<string | null>(null);
   const [detailView, setDetailView] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
+  // green dot online status
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const channel = supabase.channel('online-users')
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState<{ userId: string }>();
+        const ids = new Set(Object.values(state).flat().map((p) => p.userId));
+        setOnlineUserIds(ids);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   // User mgmt state
   const [newUser, setNewUser] = useState({ name: '', username: '', password: '', role: 'BO' as UserRole, tcId: '' });
@@ -105,30 +126,45 @@ export default function FMDashboard() {
   const walkinMeetings = filteredMeetings.filter(m => m.meetingType === 'Walk-in' && (m.status === 'Meeting Done' || m.status === 'Converted' || m.status === 'Follow-Up'));
 
   const handleAddUser = async () => {
-    if (!newUser.name || !newUser.username || !newUser.password) { toast.error('Fill all fields'); return; }
-    if (users.find(u => u.username === newUser.username)) { toast.error('Username already exists'); return; }
-    const userId = crypto.randomUUID();
-    const user: User = { id: userId, name: newUser.name, username: newUser.username, role: newUser.role, active: true };
+    if (!newUser.name || !newUser.username || !newUser.password) {
+      toast.error('Fill all fields')
+      return
+    }
+    if (users.find(u => u.username === newUser.username)) {
+      toast.error('Username already exists')
+      return
+    }
 
-    if (newUser.role === 'BO' && newUser.tcId) {
-      const team = teams.find(t => t.tcId === newUser.tcId);
-      if (team) {
-        user.teamId = team.id;
-        await updateTeamMembers(team.id, [...team.boIds, userId]);
+    try {
+      const user: User = {
+        id: crypto.randomUUID(),
+        name: newUser.name,
+        username: newUser.username,
+        role: newUser.role,
+        active: true,
       }
-    }
 
-    if (newUser.role === 'TC') {
-      const teamId = `team_${Date.now()}`;
-      user.teamId = teamId;
-      await addTeam({ id: teamId, name: `${newUser.name}'s Team`, tcId: userId, boIds: [] });
-    }
+      if (newUser.role === 'BO' && newUser.tcId) {
+        const team = teams.find(t => t.tcId === newUser.tcId)
+        if (team) {
+          user.teamId = team.id
+          await updateTeamMembers(team.id, [...team.boIds, user.id])
+        }
+      }
 
-    await addUser(user);
-    setNewUser({ name: '', username: '', password: '', role: 'BO', tcId: '' });
-    setShowAddUser(false);
-    toast.success('User added');
-  };
+      if (newUser.role === 'TC') {
+        const teamId = `team_${Date.now()}`
+        user.teamId = teamId
+        await addTeam({ id: teamId, name: `${newUser.name}'s Team`, tcId: user.id, boIds: [] })
+      }
+
+      await addUser(user, newUser.password)  // ← password bhi pass karo
+      setNewUser({ name: '', username: '', password: '', role: 'BO', tcId: '' })
+      toast.success('User added successfully')
+    } catch (err) {
+      toast.error('Failed to create user')
+    }
+  }
 
   const handleEditRole = async (userId: string) => {
     await updateUser(userId, { role: editRole });
@@ -330,15 +366,53 @@ export default function FMDashboard() {
     }
   };
 
+  // Dashboard filters
+  const [selectedTC, setSelectedTC] = useState('');
+  const [selectedMeetingStatus, setSelectedMeetingStatus] = useState('');
+
+  // dashMeetings: filtered by TC + meeting status + date
+  const dashMeetings = useMemo(() => {
+    let m = filteredMeetings;
+    if (selectedMeetingStatus) m = m.filter(mt => mt.status === selectedMeetingStatus);
+    if (selectedTC) {
+      const team = teams.find(t => t.tcId === selectedTC);
+      if (team) {
+        const tcBoIds = new Set(team.boIds);
+        m = m.filter(mt => tcBoIds.has(mt.boId));
+      }
+    }
+    return m;
+  }, [filteredMeetings, selectedTC, selectedMeetingStatus, teams]);
+
   return (
     <DashboardLayout navItems={navItems} activeTab={activeTab} onTabChange={setActiveTab}>
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-display font-bold text-foreground">Dashboard</h2>
-            <p className="text-sm text-muted-foreground mt-1">Team performance overview</p>
+
+          {/* ── Header + Filters ── */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-display font-bold text-foreground">Performance Dashboard</h2>
+              <p className="text-sm text-muted-foreground mt-1">Real-time performance metrics and Meeting distribution</p>
+            </div>
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Team Captain</label>
+                <select className="block w-40 pl-3 pr-8 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={selectedTC} onChange={e => setSelectedTC(e.target.value)}>
+                  <option value="">All Captains</option>
+                  {tcs.map(tc => <option key={tc.id} value={tc.id}>{tc.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Meeting Status</label>
+                <select className="block w-40 pl-3 pr-8 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary" value={selectedMeetingStatus} onChange={e => setSelectedMeetingStatus(e.target.value)}>
+                  <option value="">All Statuses</option>
+                  {['Scheduled', 'Meeting Done', 'Not Done', 'Pending', 'Reject', 'Converted', 'Follow-Up'].map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <DateRangeFilter fromDate={fromDate} toDate={toDate} onFromChange={setFromDate} onToChange={setToDate} onClear={() => { setFromDate(undefined); setToDate(undefined); }} />
+            </div>
           </div>
-          <DateRangeFilter fromDate={fromDate} toDate={toDate} onFromChange={setFromDate} onToChange={setToDate} onClear={() => { setFromDate(undefined); setToDate(undefined); }} />
 
           {detailView ? (
             (() => {
@@ -348,102 +422,438 @@ export default function FMDashboard() {
             })()
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                <StatCard label="Total Leads" value={filteredLeads.length} variant="primary" onClick={() => setDetailView('total')} />
-                <StatCard label="Connected" value={filteredLeads.filter(l => l.numberStatus === 'Connected').length} variant="primary" onClick={() => setDetailView('connected')} />
-                <StatCard label="Not Connected" value={filteredLeads.filter(l => l.numberStatus === 'Not Connected').length} onClick={() => setDetailView('not_connected')} />
-                <StatCard label="Total BOs" value={bos.length} variant="accent" onClick={() => setDetailView('total_bos')} />
-                <StatCard label="Total Meetings" value={filteredMeetings.length} variant="info" onClick={() => setDetailView('total_meetings')} />
-                <StatCard label="Walk-in" value={walkinMeetings.length} variant="accent" onClick={() => setDetailView('walkin')} />
+              {/* ── 5 KPI Cards ── */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {[
+                  { label: 'Total Meetings', value: dashMeetings.length, border: 'border-l-blue-500', sub: 'vs last month', view: 'total_meetings' },
+                  { label: 'Pending', value: dashMeetings.filter(m => m.status === 'Pending').length, border: 'border-l-amber-500', sub: 'waiting', view: 'total_meetings' },
+                  { label: 'Rejected', value: dashMeetings.filter(m => m.status === 'Reject').length, border: 'border-l-red-500', sub: 'improvement', view: 'total_meetings' },
+                  { label: 'Meeting Done', value: dashMeetings.filter(m => m.status === 'Meeting Done' || m.status === 'Converted').length, border: 'border-l-blue-400', sub: 'steady', view: 'total_meetings' },
+                  { label: 'Rescheduled', value: dashMeetings.filter(m => m.status === 'Follow-Up').length, border: 'border-l-sky-300', sub: 'follow-up', view: 'total_meetings' },
+                ].map(card => (
+                  <button key={card.label} onClick={() => setDetailView(card.view)}
+                    className={`bg-card border border-border border-l-4 ${card.border} rounded-xl p-5 text-left hover:shadow-md transition-all`}>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{card.label}</p>
+                    <p className="text-3xl font-extrabold text-foreground mt-2">{card.value.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground mt-2">{card.sub}</p>
+                  </button>
+                ))}
               </div>
 
-              {/* Number Status Breakdown */}
-              <Card>
-                <CardHeader><CardTitle className="text-lg font-display">Number Status Breakdown</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <StatCard label="Connected" value={filteredLeads.filter(l => l.numberStatus === 'Connected').length} variant="primary" onClick={() => setDetailView('connected')} />
-                    <StatCard label="Not Connected" value={filteredLeads.filter(l => l.numberStatus === 'Not Connected').length} onClick={() => setDetailView('not_connected')} />
-                    <StatCard label="Mobile Off" value={filteredLeads.filter(l => l.numberStatus === 'Mobile Off').length} onClick={() => setDetailView('mobile_off')} />
-                    <StatCard label="Incoming Barred" value={filteredLeads.filter(l => l.numberStatus === 'Incoming Barred').length} onClick={() => setDetailView('incoming_barred')} />
-                    <StatCard label="Invalid Number" value={filteredLeads.filter(l => l.numberStatus === 'Invalid Number').length} onClick={() => setDetailView('invalid_number')} />
-                  </div>
-                </CardContent>
-              </Card>
+              {/* ── Main 4-col grid ── */}
+              <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
 
-              {/* Connected Breakdown */}
-              <Card>
-                <CardHeader><CardTitle className="text-lg font-display">Connected Breakdown</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                    <StatCard label="Interested" value={filteredLeads.filter(l => l.leadStatus === 'Interested').length} variant="primary" onClick={() => setDetailView('interested')} />
-                    <StatCard label="Not Interested" value={filteredLeads.filter(l => l.leadStatus === 'Not Interested').length} onClick={() => setDetailView('not_interested')} />
-                    <StatCard label="Pending" value={filteredLeads.filter(l => l.leadStatus === 'Pending').length} onClick={() => setDetailView('pending')} />
-                    <StatCard label="Eligible" value={filteredLeads.filter(l => l.leadStatus === 'Eligible').length} variant="accent" onClick={() => setDetailView('eligible')} />
-                    <StatCard label="Not Eligible" value={filteredLeads.filter(l => l.leadStatus === 'Not Eligible').length} onClick={() => setDetailView('not_eligible')} />
-                    <StatCard label="Language Barrier" value={filteredLeads.filter(l => l.leadStatus === 'Language Barrier').length} onClick={() => setDetailView('language_barrier')} />
-                  </div>
-                </CardContent>
-              </Card>
+                {/* LEFT 3 cols */}
+                <div className="xl:col-span-3 space-y-6">
 
-              {/* Team Summary */}
-              <Card>
-                <CardHeader><CardTitle className="text-lg font-display">Team Summary</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  {teams.map(team => {
-                    const tc = users.find(u => u.id === team.tcId);
-                    const teamLeads = filteredLeads.filter(l => team.boIds.includes(l.assignedBOId));
-                    const isExpanded = expandedTC === team.id;
-                    return (
-                      <div key={team.id} className="border border-border rounded-lg overflow-hidden">
-                        <button onClick={() => setExpandedTC(isExpanded ? null : team.id)} className="w-full flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                            <span className="font-semibold">{tc?.name} — {team.name}</span>
-                          </div>
-                          <div className="flex gap-4 text-sm text-muted-foreground">
-                            <span>Connected: {getNumberStatusCount(teamLeads, 'Connected')}</span>
-                            <span>Not Connected: {getNumberStatusCount(teamLeads, 'Not Connected')}</span>
-                          </div>
-                        </button>
-                        {isExpanded && (
-                          <div className="border-t border-border p-4 space-y-2 bg-secondary/20">
-                            {team.boIds.map(boId => {
-                              const bo = users.find(u => u.id === boId);
-                              const boLeads = getLeadsForBO(boId);
-                              const showDetail = showConnectedDetail === boId;
-                              return (
-                                <div key={boId} className="border border-border rounded-lg p-3 bg-card">
-                                  <div className="flex items-center justify-between">
-                                    <span className="font-medium text-sm">{bo?.name}</span>
-                                    <div className="flex gap-3 text-xs text-muted-foreground">
-                                      <button onClick={() => setShowConnectedDetail(showDetail ? null : boId)} className="text-primary font-medium hover:underline">
-                                        Connected: {getNumberStatusCount(boLeads, 'Connected')}
-                                      </button>
-                                      <span>Not Conn: {getNumberStatusCount(boLeads, 'Not Connected')}</span>
-                                      <span>Off: {getNumberStatusCount(boLeads, 'Mobile Off')}</span>
-                                    </div>
-                                  </div>
-                                  {showDetail && (
-                                    <div className="mt-3 grid grid-cols-3 md:grid-cols-6 gap-2 animate-fade-in">
-                                      <StatCard label="Interested" value={getLeadStatusCount(boLeads, 'Interested')} />
-                                      <StatCard label="Not Interested" value={getLeadStatusCount(boLeads, 'Not Interested')} />
-                                      <StatCard label="Pending" value={getLeadStatusCount(boLeads, 'Pending')} />
-                                      <StatCard label="Eligible" value={getLeadStatusCount(boLeads, 'Eligible')} />
-                                      <StatCard label="Not Eligible" value={getLeadStatusCount(boLeads, 'Not Eligible')} />
-                                      <StatCard label="Lang. Barrier" value={getLeadStatusCount(boLeads, 'Language Barrier')} />
-                                    </div>
-                                  )}
+                  {/* Row 1: Meeting Status Donut + TC Meeting Count Bars */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="md:col-span-1">
+                      <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase tracking-wider">Meeting Status</CardTitle></CardHeader>
+                      <CardContent>
+                        {(() => {
+                          const data = [
+                            { name: 'Pending', value: dashMeetings.filter(m => m.status === 'Pending').length, color: '#f59e0b' },
+                            { name: 'Rejected', value: dashMeetings.filter(m => m.status === 'Reject').length, color: '#ef4444' },
+                            { name: 'Done', value: dashMeetings.filter(m => m.status === 'Meeting Done' || m.status === 'Converted').length, color: '#3b82f6' },
+                            { name: 'Follow-Up', value: dashMeetings.filter(m => m.status === 'Follow-Up').length, color: '#7dd3fc' },
+                          ].filter(d => d.value > 0);
+                          const total = data.reduce((s, d) => s + d.value, 0);
+                          if (total === 0) return <p className="text-center text-muted-foreground text-sm py-14">No data yet</p>;
+                          let offset = 0;
+                          return (
+                            <div className="flex items-center gap-3 h-44">
+                              <div className="relative w-36 h-36 flex-shrink-0">
+                                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                                  {data.map((d, i) => { const pct = (d.value / total) * 100; const el = <circle key={i} cx="18" cy="18" r="15.9" fill="none" stroke={d.color} strokeWidth="3.8" strokeDasharray={`${pct} ${100 - pct}`} strokeDashoffset={-offset} />; offset += pct; return el; })}
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                  <span className="text-lg font-extrabold text-foreground">{total.toLocaleString()}</span>
+                                  <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Total</span>
                                 </div>
+                              </div>
+                              <div className="flex-1 space-y-2">
+                                {data.map(d => (
+                                  <div key={d.name} className="flex items-center gap-2 text-xs">
+                                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
+                                    <span className="text-muted-foreground flex-1">{d.name}</span>
+                                    <span className="font-bold text-foreground">{d.value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </CardContent>
+                    </Card>
+
+                    <Card className="md:col-span-2">
+                      <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase tracking-wider">Meeting Count - Team Captain</CardTitle></CardHeader>
+                      <CardContent>
+                        {(() => {
+                          const tcData = teams.map(team => {
+                            const tc = users.find(u => u.id === team.tcId);
+                            const tcMeetings = dashMeetings.filter(m => team.boIds.includes(m.boId));
+                            return { name: tc?.name || 'TC', value: tcMeetings.length };
+                          }).filter(t => t.value > 0).sort((a, b) => b.value - a.value).slice(0, 6);
+                          if (tcData.length === 0) return <p className="text-center text-muted-foreground text-sm py-14">No TC data yet</p>;
+                          const max = Math.max(...tcData.map(t => t.value), 1);
+                          const colors = ['#3b82f6', '#0ea5e9', '#10b981', '#6366f1', '#f59e0b', '#94a3b8'];
+                          return (
+                            <div className="space-y-3 h-44 overflow-y-auto">
+                              {tcData.map((t, i) => (
+                                <div key={i} className="flex items-center gap-3">
+                                  <span className="text-xs font-semibold text-foreground w-24 truncate flex-shrink-0">{t.name}</span>
+                                  <div className="flex-1 bg-secondary rounded-full h-3.5">
+                                    <div className="h-3.5 rounded-full" style={{ width: `${(t.value / max) * 100}%`, backgroundColor: colors[i % colors.length] }} />
+                                  </div>
+                                  <span className="text-xs text-muted-foreground w-8 text-right">{t.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Row 2: BDM Bar Chart + Product Donut */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="md:col-span-2">
+                      <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase tracking-wider">Meeting Count - BDM</CardTitle></CardHeader>
+                      <CardContent>
+                        {(() => {
+                          const bdmData = bdms.map(bdm => ({
+                            name: bdm.name.split(' ')[0],
+                            value: dashMeetings.filter(m => m.bdmId === bdm.id).length,
+                          })).filter(b => b.value > 0).sort((a, b) => b.value - a.value).slice(0, 6);
+                          if (bdmData.length === 0) return <p className="text-center text-muted-foreground text-sm py-14">No BDM data yet</p>;
+                          const max = Math.max(...bdmData.map(b => b.value), 1);
+                          return (
+                            <div className="flex items-end gap-3 h-40 px-2">
+                              {bdmData.map((b, i) => (
+                                <div key={i} className="flex flex-col items-center gap-1 flex-1">
+                                  <span className="text-[10px] font-bold text-foreground">{b.value}</span>
+                                  <div className="w-full rounded-t-md bg-indigo-400 dark:bg-indigo-500" style={{ height: `${Math.max((b.value / max) * 100, 8)}%` }} />
+                                  <span className="text-[10px] text-muted-foreground truncate w-full text-center">{b.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </CardContent>
+                    </Card>
+
+                    <Card className="md:col-span-1">
+                      <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase tracking-wider">Product Distribution</CardTitle></CardHeader>
+                      <CardContent>
+                        {(() => {
+                          const productMap: Record<string, number> = {};
+                          dashMeetings.forEach(m => { if (m.productType) productMap[m.productType] = (productMap[m.productType] || 0) + 1; });
+                          const colors = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#94a3b8'];
+                          const data = Object.entries(productMap).map(([name, value], i) => ({ name, value, color: colors[i % colors.length] }));
+                          const total = data.reduce((s, d) => s + d.value, 0);
+                          if (total === 0) return <p className="text-center text-muted-foreground text-sm py-14">No product data yet</p>;
+                          let offset = 0;
+                          return (
+                            <div className="flex flex-col items-center gap-3 h-40 justify-center">
+                              <div className="relative w-28 h-28">
+                                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                                  {data.map((d, i) => { const pct = (d.value / total) * 100; const el = <circle key={i} cx="18" cy="18" r="15.9" fill="none" stroke={d.color} strokeWidth="3.8" strokeDasharray={`${pct} ${100 - pct}`} strokeDashoffset={-offset} />; offset += pct; return el; })}
+                                </svg>
+                              </div>
+                              <div className="w-full space-y-1">
+                                {data.map(d => (
+                                  <div key={d.name} className="flex items-center gap-1.5 text-xs">
+                                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
+                                    <span className="text-muted-foreground flex-1 truncate">{d.name}</span>
+                                    <span className="font-bold">{d.value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* ── BDM-wise Performance Table ── */}
+                  <Card>
+                    <CardHeader className="pb-3"><CardTitle className="text-xs font-bold uppercase tracking-wider">BDM-wise Performance</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-border">
+                          <thead>
+                            <tr className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left">BDM Name</th>
+                              <th className="px-4 py-3 text-left">Total Meeting</th>
+                              <th className="px-4 py-3 text-left">Pending Meeting</th>
+                              <th className="px-4 py-3 text-left">Walk-in</th>
+                              <th className="px-4 py-3 text-left">Mini-Login</th>
+                              <th className="px-4 py-3 text-left">Walking Rate</th>
+                              <th className="px-4 py-3 text-left">Login Rate</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border text-sm">
+                            {bdms.map(bdm => {
+                              const bdmMtgs = dashMeetings.filter(m => m.bdmId === bdm.id);
+                              if (bdmMtgs.length === 0) return null;
+                              const pending = bdmMtgs.filter(m => m.status === 'Pending').length;
+                              const walkin = bdmMtgs.filter(m => m.meetingType === 'Walk-in').length;
+                              const mini = bdmMtgs.filter(m => m.miniLogin).length;
+                              const walkRate = Math.round((walkin / bdmMtgs.length) * 100);
+                              const loginRate = Math.round((mini / bdmMtgs.length) * 100);
+                              return (
+                                <tr key={bdm.id} className="hover:bg-secondary/30 transition-colors">
+                                  <td className="px-4 py-4 font-medium text-foreground">{bdm.name}</td>
+                                  <td className="px-4 py-4 text-muted-foreground">{bdmMtgs.length}</td>
+                                  <td className="px-4 py-4 text-muted-foreground">{pending}</td>
+                                  <td className="px-4 py-4 text-muted-foreground">{walkin}</td>
+                                  <td className="px-4 py-4 text-muted-foreground">{mini}</td>
+                                  <td className="px-4 py-4"><span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">{walkRate}%</span></td>
+                                  <td className="px-4 py-4"><span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">{loginRate}%</span></td>
+                                </tr>
                               );
                             })}
-                          </div>
-                        )}
+                            {bdms.filter(b => dashMeetings.filter(m => m.bdmId === b.id).length > 0).length === 0 && (
+                              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground text-sm">No BDM data yet</td></tr>
+                            )}
+                          </tbody>
+                        </table>
                       </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+
+                  {/* ── TC-wise Performance Table ── */}
+                  <Card>
+                    <CardHeader className="pb-3"><CardTitle className="text-xs font-bold uppercase tracking-wider">TC-wise Performance</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-border">
+                          <thead>
+                            <tr className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left">TC Name</th>
+                              <th className="px-4 py-3 text-left">No. of BO</th>
+                              <th className="px-4 py-3 text-left">Total Leads</th>
+                              <th className="px-4 py-3 text-left">Total Meeting</th>
+                              <th className="px-4 py-3 text-left">Pending Meetings</th>
+                              <th className="px-4 py-3 text-left">Walk-in</th>
+                              <th className="px-4 py-3 text-left">Success Rate</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border text-sm">
+                            {teams.map(team => {
+                              const tc = users.find(u => u.id === team.tcId);
+                              const teamLeads = filteredLeads.filter(l => team.boIds.includes(l.assignedBOId));
+                              const tcMtgs = dashMeetings.filter(m => team.boIds.includes(m.boId));
+                              const pending = tcMtgs.filter(m => m.status === 'Pending').length;
+                              const walkin = tcMtgs.filter(m => m.meetingType === 'Walk-in').length;
+                              const done = tcMtgs.filter(m => m.status === 'Meeting Done' || m.status === 'Converted').length;
+                              const rate = tcMtgs.length > 0 ? Math.round((done / tcMtgs.length) * 100) : 0;
+                              return (
+                                <tr key={team.id} className="hover:bg-secondary/30 transition-colors">
+                                  <td className="px-4 py-4 font-medium text-foreground">{tc?.name || '—'}</td>
+                                  <td className="px-4 py-4 text-muted-foreground">{team.boIds.length}</td>
+                                  <td className="px-4 py-4 font-semibold text-foreground">{teamLeads.length}</td>
+                                  <td className="px-4 py-4 text-muted-foreground">{tcMtgs.length}</td>
+                                  <td className="px-4 py-4 text-muted-foreground">{pending}</td>
+                                  <td className="px-4 py-4"><span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">{walkin}</span></td>
+                                  <td className="px-4 py-4 font-bold text-foreground">{rate}%</td>
+                                </tr>
+                              );
+                            })}
+                            {teams.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground text-sm">No team data yet</td></tr>}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* ── BO-wise Performance Table ── */}
+                  <Card>
+                    <CardHeader className="pb-3"><CardTitle className="text-xs font-bold uppercase tracking-wider">BO-wise Performance</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-border">
+                          <thead>
+                            <tr className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left">BO Name</th>
+                              <th className="px-4 py-3 text-left">Total Leads</th>
+                              <th className="px-4 py-3 text-left">Connected</th>
+                              <th className="px-4 py-3 text-left">Interested</th>
+                              <th className="px-4 py-3 text-left">Meeting</th>
+                              <th className="px-4 py-3 text-left">Success Rate</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border text-sm">
+                            {bos.map(bo => {
+                              const boLeads = getLeadsForBO(bo.id);
+                              if (boLeads.length === 0) return null;
+                              const connected = getNumberStatusCount(boLeads, 'Connected');
+                              const interested = getLeadStatusCount(boLeads, 'Interested');
+                              const boMtgs = dashMeetings.filter(m => m.boId === bo.id).length;
+                              const rate = boLeads.length > 0 ? Math.round((boMtgs / boLeads.length) * 100) : 0;
+                              return (
+                                <tr key={bo.id} className="hover:bg-secondary/30 transition-colors">
+                                  <td className="px-4 py-4 font-medium text-foreground">{bo.name}</td>
+                                  <td className="px-4 py-4 text-muted-foreground">{boLeads.length}</td>
+                                  <td className="px-4 py-4"><span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-700 text-xs font-bold border border-green-100 dark:bg-green-950 dark:text-green-300 dark:border-green-800">{connected}</span></td>
+                                  <td className="px-4 py-4"><span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800">{interested}</span></td>
+                                  <td className="px-4 py-4"><span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">{boMtgs}</span></td>
+                                  <td className="px-4 py-4 font-bold text-foreground">{rate}%</td>
+                                </tr>
+                              );
+                            })}
+                            {bos.filter(bo => getLeadsForBO(bo.id).length > 0).length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">No BO data yet</td></tr>}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* ── State-wise Leads Table ── */}
+                  <Card>
+                    <CardHeader className="pb-3"><CardTitle className="text-xs font-bold uppercase tracking-wider">State-wise Leads</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-border">
+                          <thead>
+                            <tr className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left">State</th>
+                              <th className="px-4 py-3 text-left">Total Meetings</th>
+                              <th className="px-4 py-3 text-left">Pending</th>
+                              <th className="px-4 py-3 text-left">Top Product</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border text-sm">
+                            {(() => {
+                              const sm: Record<string, { total: number; pending: number; products: Record<string, number> }> = {};
+                              dashMeetings.forEach(m => {
+                                const s = m.state || 'Unknown';
+                                if (!sm[s]) sm[s] = { total: 0, pending: 0, products: {} };
+                                sm[s].total++;
+                                if (m.status === 'Pending') sm[s].pending++;
+                                if (m.productType) sm[s].products[m.productType] = (sm[s].products[m.productType] || 0) + 1;
+                              });
+                              const rows = Object.entries(sm).sort((a, b) => b[1].total - a[1].total);
+                              if (rows.length === 0) return <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">No state data yet</td></tr>;
+                              return rows.map(([state, d]) => {
+                                const top = Object.entries(d.products).sort((a, b) => b[1] - a[1])[0]?.[0];
+                                return (
+                                  <tr key={state} className="hover:bg-secondary/30 transition-colors">
+                                    <td className="px-4 py-4 font-medium text-foreground">{state}</td>
+                                    <td className="px-4 py-4 text-muted-foreground">{d.total}</td>
+                                    <td className="px-4 py-4"><span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-100 dark:bg-green-950 dark:text-green-300 dark:border-green-800">{d.pending}</span></td>
+                                    <td className="px-4 py-4">{top ? <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-50 text-orange-800 border border-orange-100 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800">{top}</span> : <span className="text-muted-foreground">—</span>}</td>
+                                  </tr>
+                                );
+                              });
+                            })()}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* ── RIGHT PANEL ── */}
+                <div className="xl:col-span-1 space-y-6">
+                  {/* Daily Trend */}
+                  <Card>
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                      <CardTitle className="text-xs font-bold uppercase tracking-wider">Daily Trend</CardTitle>
+                      <span className="text-[10px] font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded uppercase">Monthly</span>
+                    </CardHeader>
+                    <CardContent>
+                      {(() => {
+                        const dateMap: Record<string, number> = {};
+                        dashMeetings.forEach(m => { dateMap[m.date] = (dateMap[m.date] || 0) + 1; });
+                        const sorted = Object.entries(dateMap).sort((a, b) => a[0].localeCompare(b[0]));
+                        if (sorted.length === 0) return <div className="h-56 flex items-center justify-center text-muted-foreground text-sm">No trend data yet</div>;
+                        const values = sorted.map(([, v]) => v);
+                        const max = Math.max(...values, 1);
+                        const peak = Math.max(...values);
+                        const avg = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
+                        const W = 200, H = 120;
+                        const pts = values.map((v, i) => `${(i / (values.length - 1 || 1)) * W},${H - (v / max) * (H - 10) - 5}`).join(' ');
+                        const area = `0,${H} ${pts} ${W},${H}`;
+                        return (
+                          <>
+                            <div className="h-56 w-full">
+                              <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="none">
+                                <defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" /><stop offset="100%" stopColor="#3b82f6" stopOpacity="0" /></linearGradient></defs>
+                                <polygon points={area} fill="url(#trendGrad)" />
+                                <polyline points={pts} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" />
+                                {values.map((v, i) => <circle key={i} cx={(i / (values.length - 1 || 1)) * W} cy={H - (v / max) * (H - 10) - 5} r="2.5" fill="white" stroke="#3b82f6" strokeWidth="1.5" />)}
+                              </svg>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 gap-3">
+                              <div><p className="text-[10px] font-bold text-muted-foreground uppercase">Peak Volume</p><p className="text-base font-bold text-foreground">{peak} Meetings</p></div>
+                              <div><p className="text-[10px] font-bold text-muted-foreground uppercase">Avg Daily</p><p className="text-base font-bold text-foreground">{avg}</p></div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+
+                  {/* Activity Heatmap */}
+                  <Card>
+                    <CardHeader className="pb-4"><CardTitle className="text-xs font-bold uppercase tracking-wider">Activity Heatmap</CardTitle></CardHeader>
+                    <CardContent>
+                      {(() => {
+                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+                        const grid: number[][] = Array.from({ length: 5 }, () => Array(5).fill(0));
+                        dashMeetings.forEach(m => {
+                          if (!m.date) return;
+                          const d = new Date(m.date);
+                          const dow = d.getDay();
+                          const wom = Math.floor((d.getDate() - 1) / 7);
+                          if (dow >= 1 && dow <= 5 && wom < 5) grid[wom][dow - 1]++;
+                        });
+                        const maxVal = Math.max(...grid.flat(), 1);
+                        const getColor = (v: number) => { const p = v / maxVal; if (p === 0) return 'bg-blue-50 dark:bg-blue-950'; if (p < 0.25) return 'bg-blue-200 dark:bg-blue-800'; if (p < 0.5) return 'bg-blue-400 dark:bg-blue-600'; if (p < 0.75) return 'bg-blue-600 dark:bg-blue-400'; return 'bg-blue-800 dark:bg-blue-300'; };
+                        const wLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+                        return (
+                          <>
+                            <div className="grid gap-1.5" style={{ gridTemplateColumns: '28px repeat(5, 1fr)' }}>
+                              <div />
+                              {days.map(d => <div key={d} className="text-[9px] text-center text-muted-foreground font-bold uppercase">{d}</div>)}
+                              {/* {grid.map((row, wi) => (
+                                <>
+                                  <div key={`w${wi}`} className="text-[9px] text-muted-foreground font-bold flex items-center justify-end pr-1">{wLabels[wi]}</div>
+                                  {row.map((val, di) => <div key={di} title={`${val} meetings`} className={`${getColor(val)} rounded-sm h-8 shadow-sm`} />)}
+                                </>
+                              ))} */}
+                              {grid.map((row, wi) => (
+                                <React.Fragment key={wi}>
+                                  <div className="text-[9px] text-muted-foreground font-bold flex items-center justify-end pr-1">
+                                    {wLabels[wi]}
+                                  </div>
+
+                                  {row.map((val, di) => (
+                                    <div
+                                      key={di}
+                                      title={`${val} meetings`}
+                                      className={`${getColor(val)} rounded-sm h-8 shadow-sm`}
+                                    />
+                                  ))}
+                                </React.Fragment>
+                              ))}
+                            </div>
+                            <div className="mt-5 flex items-center justify-between text-[9px] font-bold text-muted-foreground uppercase">
+                              <span>Low Activity</span>
+                              <div className="flex gap-1">{['bg-blue-100', 'bg-blue-300', 'bg-blue-500', 'bg-blue-700', 'bg-blue-900'].map((c, i) => <div key={i} className={`w-3 h-3 rounded-sm ${c}`} />)}</div>
+                              <span>High Activity</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -485,7 +895,13 @@ export default function FMDashboard() {
                       </Select>
                     </div>
                   )}
-                  <Button onClick={handleAddUser} className="w-full">Add User</Button>
+                  {/* <Button onClick={handleAddUser} className="w-full">Add User</Button> */}
+                  <Button
+                    disabled={isLoading('add_user')}
+                    onClick={() => withLoading('add_user', handleAddUser)}
+                    className="w-full">
+                    {isLoading('add_user') ? 'Adding...' : 'Add User'}
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -535,7 +951,12 @@ export default function FMDashboard() {
                           <div className="flex gap-1">
                             {isEditing ? (
                               <>
-                                <Button size="sm" onClick={() => handleEditRole(user.id)}>Save</Button>
+                                {/* <Button size="sm" onClick={() => handleEditRole(user.id)}>Save</Button> */}
+                                <Button size="sm"
+                                  disabled={isLoading(`edit_role_${user.id}`)}
+                                  onClick={() => withLoading(`edit_role_${user.id}`, () => handleEditRole(user.id))}>
+                                  {isLoading(`edit_role_${user.id}`) ? 'Saving...' : 'Save'}
+                                </Button>
                                 <Button size="sm" variant="ghost" onClick={() => setEditingUser(null)}>Cancel</Button>
                               </>
                             ) : (
@@ -592,7 +1013,14 @@ export default function FMDashboard() {
                       {unassignedBOs.length === 0 && <span className="text-sm text-muted-foreground">No unassigned BOs</span>}
                     </div>
                   </div>
-                  <Button onClick={handleCreateTeam} className="w-full">Create Team</Button>
+                  {/* <Button onClick={handleCreateTeam} className="w-full">Create Team</Button> */}
+
+                  <Button
+                    disabled={isLoading('create_team')}
+                    onClick={() => withLoading('create_team', handleCreateTeam)}
+                    className="w-full">
+                    {isLoading('create_team') ? 'Creating...' : 'Create Team'}
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -633,7 +1061,12 @@ export default function FMDashboard() {
                             <SelectContent>{tcs.filter(tc => tc.id !== team.tcId).map(tc => <SelectItem key={tc.id} value={tc.id}>{tc.name}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
-                        <Button size="sm" onClick={() => handleChangeTC(team.id)}>Save</Button>
+                        {/* <Button size="sm" onClick={() => handleChangeTC(team.id)}>Save</Button> */}
+                        <Button size="sm"
+                          disabled={isLoading(`change_tc_${team.id}`)}
+                          onClick={() => withLoading(`change_tc_${team.id}`, () => handleChangeTC(team.id))}>
+                          {isLoading(`change_tc_${team.id}`) ? 'Saving...' : 'Save'}
+                        </Button>
                       </div>
                     )}
                     <p className="text-sm text-muted-foreground mb-3">Business Officers:</p>
@@ -644,7 +1077,10 @@ export default function FMDashboard() {
                           <div key={boId} className="flex items-center gap-1">
                             <Badge>{bo?.name}</Badge>
                             {isEditing && (
-                              <button onClick={() => handleRemoveBOFromTeam(team.id, boId)} className="text-destructive hover:text-destructive/80">
+                              <button
+                                disabled={isLoading(`remove_bo_${boId}`)}
+                                onClick={() => withLoading(`remove_bo_${boId}`, () => handleRemoveBOFromTeam(team.id, boId))}
+                                className="text-destructive hover:text-destructive/80 disabled:opacity-50">
                                 <UserMinus className="w-3 h-3" />
                               </button>
                             )}
@@ -658,8 +1094,10 @@ export default function FMDashboard() {
                         <p className="text-sm font-medium mb-2">Add BO to this team:</p>
                         <div className="flex flex-wrap gap-2">
                           {bos.filter(b => !team.boIds.includes(b.id)).map(bo => (
-                            <Button key={bo.id} size="sm" variant="outline" onClick={() => handleAddBOToTeam(team.id, bo.id)}>
-                              <UserPlus className="w-3 h-3 mr-1" />{bo.name}
+                            <Button key={bo.id} size="sm" variant="outline"
+                              disabled={isLoading(`add_bo_${bo.id}`)}
+                              onClick={() => withLoading(`add_bo_${bo.id}`, () => handleAddBOToTeam(team.id, bo.id))}>
+                              <UserPlus className="w-3 h-3 mr-1" />{isLoading(`add_bo_${bo.id}`) ? 'Adding...' : bo.name}
                             </Button>
                           ))}
                         </div>
@@ -685,12 +1123,16 @@ export default function FMDashboard() {
             <CardHeader><CardTitle className="text-base">Select BOs for Distribution</CardTitle></CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {bos.map(bo => (
-                  <button key={bo.id} onClick={() => setSelectedBOs(prev => prev.includes(bo.id) ? prev.filter(id => id !== bo.id) : [...prev, bo.id])}
-                    className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${selectedBOs.includes(bo.id) ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary border-border text-foreground hover:bg-secondary/80'}`}>
-                    {bo.name}
-                  </button>
-                ))}
+                {bos.map(bo => {
+                  const isOnline = onlineUserIds.has(bo.id);
+                  return (
+                    <button key={bo.id} onClick={() => setSelectedBOs(prev => prev.includes(bo.id) ? prev.filter(id => id !== bo.id) : [...prev, bo.id])}
+                      className={`px-3 py-1.5 rounded-lg text-sm border transition-colors flex items-center gap-2 ${selectedBOs.includes(bo.id) ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary border-border text-foreground hover:bg-secondary/80'}`}>
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
+                      {bo.name}
+                    </button>
+                  );
+                })}
               </div>
               {selectedBOs.length > 0 && <p className="text-xs text-muted-foreground mt-2">{selectedBOs.length} BOs selected</p>}
             </CardContent>
@@ -720,8 +1162,10 @@ export default function FMDashboard() {
                 rows={6}
                 className="font-mono text-xs"
               />
-              <Button onClick={handlePasteImport} disabled={!pasteData.trim()}>
-                <ClipboardPaste className="w-4 h-4 mr-2" />Import Pasted Data
+              <Button
+                disabled={!pasteData.trim() || isLoading('paste_import')}
+                onClick={() => withLoading('paste_import', handlePasteImport)}>
+                <ClipboardPaste className="w-4 h-4 mr-2" />{isLoading('paste_import') ? 'Importing...' : 'Import Pasted Data'}
               </Button>
             </CardContent>
           </Card>
@@ -740,7 +1184,12 @@ export default function FMDashboard() {
                 /></div>
                 <div><Label>Loan Requirement</Label><Input value={leadInput.loanRequirement} onChange={e => setLeadInput(p => ({ ...p, loanRequirement: e.target.value }))} placeholder="Amount or text" /></div>
               </div>
-              <Button onClick={handleAddLead}><UploadIcon className="w-4 h-4 mr-2" />Add & Distribute Lead</Button>
+              {/* <Button onClick={handleAddLead}><UploadIcon className="w-4 h-4 mr-2" />Add & Distribute Lead</Button> */}
+              <Button
+                disabled={isLoading('add_lead')}
+                onClick={() => withLoading('add_lead', handleAddLead)}>
+                <UploadIcon className="w-4 h-4 mr-2" />{isLoading('add_lead') ? 'Adding...' : 'Add & Distribute Lead'}
+              </Button>
             </CardContent>
           </Card>
 
@@ -1149,7 +1598,7 @@ export default function FMDashboard() {
             <Button variant="outline" className="flex-1" onClick={() => setPendingUpload(null)}>
               Cancel & Discard
             </Button>
-            <Button className="flex-1" onClick={async () => {
+            {/* <Button className="flex-1" onClick={async () => {
               if (pendingUpload) {
                 await addLeads(pendingUpload.newLeads, pendingUpload.dupes);
                 setPendingUpload(null);
@@ -1163,6 +1612,22 @@ export default function FMDashboard() {
               }
             }}>
               Confirm & Save {pendingUpload?.isManual ? 'Duplicate' : 'All'}
+            </Button> */}
+            <Button className="flex-1"
+              disabled={isLoading('confirm_upload')}
+              onClick={() => withLoading('confirm_upload', async () => {
+                if (pendingUpload) {
+                  await addLeads(pendingUpload.newLeads, pendingUpload.dupes);
+                  setPendingUpload(null);
+                  if (pendingUpload.isManual) {
+                    setLeadInput({ clientName: '', phoneNumber: '', loanRequirement: '' });
+                    toast.success('Lead recorded in Duplicate Leads folder');
+                  } else {
+                    toast.success(`${pendingUpload.newLeads.length} leads uploaded. ${pendingUpload.dupes.length} duplicates stored.`);
+                  }
+                }
+              })}>
+              {isLoading('confirm_upload') ? 'Saving...' : `Confirm & Save ${pendingUpload?.isManual ? 'Duplicate' : 'All'}`}
             </Button>
           </DialogFooter>
         </DialogContent>
