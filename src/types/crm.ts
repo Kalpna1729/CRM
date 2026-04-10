@@ -36,6 +36,9 @@ export interface Lead {
   meetingRequested: boolean;
   meetingApproved: boolean;
   meetingId?: string;
+  priority?: 'Hot' | 'Warm' | 'Cold';
+  followUpDate?: string;   // "YYYY-MM-DD"
+  callCount?: number;
 }
 
 export interface LeadRemark {

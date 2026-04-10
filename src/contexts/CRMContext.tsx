@@ -54,6 +54,9 @@ const mapLead = (l: any): Lead => ({
   assignedDate: l.assigned_date, meetingRequested: l.meeting_requested,
   meetingRejected: l.meeting_rejected,
   meetingApproved: l.meeting_approved, meetingId: l.meeting_id || undefined,
+  priority: l.priority ?? undefined,
+  followUpDate: l.follow_up_date ?? undefined,
+  callCount: l.call_count ?? 0,
 });
 
 const mapMeeting = (m: any): Meeting => ({
@@ -179,7 +182,8 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       mapper: (row: any) => T
     ): T[] {
       const { eventType, new: newRow, old: oldRow } = payload;
-      if (eventType === 'INSERT') return [...prev, mapper(newRow)];
+      // if (eventType === 'INSERT') return [...prev, mapper(newRow)];
+      if (eventType === 'INSERT') return [mapper(newRow), ...prev];
       if (eventType === 'UPDATE') return prev.map(item => item.id === newRow.id ? mapper(newRow) : item);
       if (eventType === 'DELETE') return prev.filter(item => item.id !== oldRow.id);
       return prev;
@@ -320,6 +324,9 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     if (updates.meetingRejected !== undefined) dbUpdates.meeting_rejected = updates.meetingRejected;
     if (updates.meetingId !== undefined) dbUpdates.meeting_id = updates.meetingId;
     if (updates.address !== undefined) dbUpdates.address = updates.address;
+    if (updates.priority !== undefined) dbUpdates.priority = updates.priority || null;
+    if (updates.followUpDate !== undefined) dbUpdates.follow_up_date = updates.followUpDate || null;
+    if (updates.callCount !== undefined) dbUpdates.call_count = updates.callCount;
     await supabase.from('leads').update(dbUpdates).eq('id', leadId);
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, ...updates } : l));
   }, []);
