@@ -780,7 +780,7 @@ export default function BODashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div className="bo-clock">{clock}</div>
                     {followupAlerts.length > 0 && (
-                      <button className="cc-btn-sm cc-btn-ghost" style={{ borderColor: 'rgba(245,158,11,0.3)', color: 'var(--warning)' }} onClick={() => setActiveTab('leads')}>
+                      <button className="cc-btn-sm cc-btn-ghost" style={{ borderColor: 'rgba(245,158,11,0.3)', color: 'var(--warning)' }} onClick={() => setActiveTab('history')}>
                         {Icons.bell} {followupAlerts.length} follow-up{followupAlerts.length > 1 ? 's' : ''} due
                       </button>
                     )}
@@ -790,10 +790,10 @@ export default function BODashboard() {
                 {/* KPI Row */}
                 <div className="kpi-row">
                   {[
-                    { label: "Today's Leads", val: todayLeads.length, color: 'var(--accent)', bars: [8, 10, 9, 12, 11, 13, todayLeads.length], barColor: '#3d7fff' },
+                    { label: "Total Leads", val: myLeads.length, color: 'var(--accent)', bars: [8, 10, 9, 12, 11, 13, myLeads.length], barColor: '#3d7fff' },
                     { label: 'Connected', val: connected, color: 'var(--success)', sub: `${connectRate}% rate`, bars: [3, 4, 3, 5, 4, 5, connected], barColor: '#00d4aa' },
                     { label: 'Interested', val: interested, color: 'var(--purple)', bars: [1, 2, 1, 3, 2, 3, interested], barColor: '#a78bfa' },
-                    { label: 'Meetings Today', val: meetingsToday, color: 'var(--warning)', bars: [0, 1, 0, 2, 1, 2, meetingsToday], barColor: '#f59e0b' },
+                    { label: 'Total Meetings', val: myMeetings.length, color: 'var(--warning)', bars: [0, 1, 0, 2, 1, 2, myMeetings.length], barColor: '#f59e0b' },
                     { label: 'Hot Leads', val: hotLeads, color: 'var(--danger)', bars: [0, 1, 1, 2, 1, 2, hotLeads], barColor: '#ff4757' },
                   ].map(k => {
                     const max = Math.max(...k.bars) || 1;
@@ -943,7 +943,10 @@ export default function BODashboard() {
                 {followupAlerts.length > 0 && (
                   <div className="alert-strip">
                     <span>{Icons.bell}</span>
+                    <button className="cc-btn-sm cc-btn-ghost" style={{ borderColor: 'rgba(245,158,11,0.3)', color: 'var(--warning)' }} onClick={() => setActiveTab('history')}>
+                      {/* {Icons.bell} {followupAlerts.length} follow-up{followupAlerts.length > 1 ? 's' : ''} due */}
                     <div className="alert-text"><strong style={{ color: 'var(--orange)' }}>{followupAlerts.length} follow-up{followupAlerts.length > 1 ? 's' : ''}</strong> due — {followupAlerts.map(f => f.lead?.clientName).join(', ')}</div>
+                    </button>
                   </div>
                 )}
                 <div className="filter-bar">

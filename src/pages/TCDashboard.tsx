@@ -2296,7 +2296,7 @@ export default function TCDashboard() {
                             <div key={bdm.id} style={{ marginBottom: '14px' }}>
                               <div style={{ fontSize: '10px', color: 'var(--text2)', fontFamily: "'JetBrains Mono', monospace", marginBottom: '8px' }}>{bdm.name.toUpperCase()} (BDM)</div>
                               <div className="slot-grid">
-                                {TIME_SLOTS.slice(0, 8).map(slot => (
+                                {TIME_SLOTS.slice(0, 21).map(slot => (
                                   <div key={slot} className={`slot-chip ${bookedSlots.includes(slot) ? 'slot-booked' : 'slot-free'}`}>{slot}</div>
                                 ))}
                               </div>

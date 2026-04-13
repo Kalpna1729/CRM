@@ -1640,6 +1640,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useCRM } from '@/contexts/CRMContext';
 import { useLoading } from '@/hooks/use-loading';
+import FMReport from './FMReport';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User, Lead, UserRole, NumberStatus, LeadStatus, DuplicateLead } from '@/types/crm';
@@ -1652,28 +1653,28 @@ type Theme = 'dark' | 'light';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const I = {
-  overview: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-  bo:       <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>,
-  tc:       <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75M21 21v-2a4 4 0 00-3-3.87"/></svg>,
-  bdm:      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
-  bdo:      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>,
-  leads:    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
-  users:    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
-  teams:    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>,
-  dupes:    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>,
-  sun:      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>,
-  moon:     <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>,
-  logout:   <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
-  bell:     <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
-  activity: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-  trash:    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>,
-  edit:     <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-  plus:     <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  check:    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
-  upload:   <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>,
-  paste:    <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>,
-  eye:      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-  merge:    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 009 9"/></svg>,
+  overview: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
+  bo: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" /></svg>,
+  tc: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" /><path d="M16 3.13a4 4 0 010 7.75M21 21v-2a4 4 0 00-3-3.87" /></svg>,
+  bdm: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>,
+  bdo: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><path d="M9 12h6M9 16h4" /></svg>,
+  leads: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>,
+  users: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg>,
+  teams: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" /></svg>,
+  dupes: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>,
+  sun: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>,
+  moon: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>,
+  logout: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>,
+  bell: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>,
+  activity: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>,
+  trash: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6M9 6V4h6v2" /></svg>,
+  edit: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
+  plus: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>,
+  check: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
+  upload: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3" /></svg>,
+  paste: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /></svg>,
+  eye: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>,
+  merge: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3" /><circle cx="6" cy="6" r="3" /><path d="M6 21V9a9 9 0 009 9" /></svg>,
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1766,7 +1767,7 @@ export default function FMDashboard() {
   useEffect(() => {
     const tick = () => {
       const n = new Date();
-      setClock(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')} ${n.getHours()>=12?'PM':'AM'}`);
+      setClock(`${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}:${String(n.getSeconds()).padStart(2, '0')} ${n.getHours() >= 12 ? 'PM' : 'AM'}`);
     };
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
   }, []);
@@ -2189,10 +2190,11 @@ export default function FMDashboard() {
               <div className="fm-nav-label">Monitor</div>
               {([
                 { id: 'overview', label: 'Overview', icon: I.overview, badge: onlineCount, badgeCls: 'teal' },
-                { id: 'bo',       label: 'BO Activity',  icon: I.bo,    badge: overdueFollowups > 0 ? overdueFollowups : null, badgeCls: 'warn' },
-                { id: 'tc',       label: 'TC Monitor',   icon: I.tc,    badge: pendingReqs > 0 ? pendingReqs : null, badgeCls: '' },
-                { id: 'bdm',      label: 'BDM Monitor',  icon: I.bdm,   badge: rescheduleCount > 0 ? rescheduleCount : null, badgeCls: 'warn' },
-                { id: 'bdo',      label: 'BDO Monitor',  icon: I.bdo },
+                { id: 'bo', label: 'BO Activity', icon: I.bo, badge: overdueFollowups > 0 ? overdueFollowups : null, badgeCls: 'warn' },
+                { id: 'tc', label: 'TC Monitor', icon: I.tc, badge: pendingReqs > 0 ? pendingReqs : null, badgeCls: '' },
+                { id: 'bdm', label: 'BDM Monitor', icon: I.bdm, badge: rescheduleCount > 0 ? rescheduleCount : null, badgeCls: 'warn' },
+                { id: 'bdo', label: 'BDO Monitor', icon: I.bdo },
+                { id: 'report', label: 'Reports', icon: I.leads },
               ] as any[]).map(item => (
                 <div key={item.id} className={`fm-nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => setActiveTab(item.id)}>
                   <div className="fm-nav-icon">{item.icon}</div>{item.label}
@@ -2203,10 +2205,10 @@ export default function FMDashboard() {
             <div className="fm-nav-section">
               <div className="fm-nav-label">Manage</div>
               {([
-                { id: 'leads',      label: 'Leads',       icon: I.leads },
-                { id: 'users',      label: 'Users',       icon: I.users },
-                { id: 'teams',      label: 'Teams',       icon: I.teams },
-                { id: 'duplicates', label: 'Duplicates',  icon: I.dupes, badge: duplicateLeads.length > 0 ? duplicateLeads.length : null, badgeCls: 'warn' },
+                { id: 'leads', label: 'Leads', icon: I.leads },
+                { id: 'users', label: 'Users', icon: I.users },
+                { id: 'teams', label: 'Teams', icon: I.teams },
+                { id: 'duplicates', label: 'Duplicates', icon: I.dupes, badge: duplicateLeads.length > 0 ? duplicateLeads.length : null, badgeCls: 'warn' },
               ] as any[]).map(item => (
                 <div key={item.id} className={`fm-nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => setActiveTab(item.id)}>
                   <div className="fm-nav-icon">{item.icon}</div>{item.label}
@@ -2248,11 +2250,11 @@ export default function FMDashboard() {
                 {/* Top KPIs */}
                 <div className="fm-kpi-grid fm-kpi-grid-5" style={{ gridTemplateColumns: 'repeat(5, minmax(0,1fr))', marginBottom: '16px' }}>
                   {[
-                    { label: 'Total Leads', val: totalLeads, color: 'var(--teal)', sub: `${todayLeads.length} today`, bars: [60,70,65,80,75,85,totalLeads], bc: '#06b6d4' },
-                    { label: 'Connected', val: connected, color: 'var(--success)', sub: `${totalLeads ? Math.round(connected/totalLeads*100) : 0}% rate`, bars: [20,25,22,30,28,32,connected], bc: '#00d4aa' },
-                    { label: 'Meetings', val: totalMeetings, color: 'var(--accent)', sub: `${todayMeetings.length} today`, bars: [5,8,7,10,9,12,totalMeetings], bc: '#3d7fff' },
-                    { label: 'Converted', val: converted, color: 'var(--success)', sub: `${totalMeetings ? Math.round(converted/totalMeetings*100) : 0}% conv. rate`, bars: [1,2,2,3,3,4,converted], bc: '#00d4aa' },
-                    { label: 'Hot Leads', val: hotLeads, color: 'var(--danger)', sub: `${totalCalls} total calls`, bars: [0,1,1,2,2,3,hotLeads], bc: '#ff4757' },
+                    { label: 'Total Leads', val: totalLeads, color: 'var(--teal)', sub: `${todayLeads.length} today`, bars: [60, 70, 65, 80, 75, 85, totalLeads], bc: '#06b6d4' },
+                    { label: 'Connected', val: connected, color: 'var(--success)', sub: `${totalLeads ? Math.round(connected / totalLeads * 100) : 0}% rate`, bars: [20, 25, 22, 30, 28, 32, connected], bc: '#00d4aa' },
+                    { label: 'Meetings', val: totalMeetings, color: 'var(--accent)', sub: `${todayMeetings.length} today`, bars: [5, 8, 7, 10, 9, 12, totalMeetings], bc: '#3d7fff' },
+                    { label: 'Converted', val: converted, color: 'var(--success)', sub: `${totalMeetings ? Math.round(converted / totalMeetings * 100) : 0}% conv. rate`, bars: [1, 2, 2, 3, 3, 4, converted], bc: '#00d4aa' },
+                    { label: 'Hot Leads', val: hotLeads, color: 'var(--danger)', sub: `${totalCalls} total calls`, bars: [0, 1, 1, 2, 2, 3, hotLeads], bc: '#ff4757' },
                   ].map(k => {
                     const max = Math.max(...k.bars) || 1;
                     return (
@@ -2261,7 +2263,7 @@ export default function FMDashboard() {
                         <div className="fm-kpi-val" style={{ color: k.color }}>{k.val}</div>
                         <div className="fm-kpi-sub">{k.sub}</div>
                         <div className="fm-kpi-bar-wrap">
-                          {k.bars.map((v, i) => <div key={i} className="fm-kpi-spark" style={{ height: `${Math.max(2, Math.round((v/max)*16))}px`, background: k.bc }} />)}
+                          {k.bars.map((v, i) => <div key={i} className="fm-kpi-spark" style={{ height: `${Math.max(2, Math.round((v / max) * 16))}px`, background: k.bc }} />)}
                         </div>
                       </div>
                     );
@@ -2419,7 +2421,7 @@ export default function FMDashboard() {
                   <input type="date" className="fm-date-input" value={fromDate} onChange={e => setFromDate(e.target.value)} />
                   <span className="fm-label">TO</span>
                   <input type="date" className="fm-date-input" value={toDate} onChange={e => setToDate(e.target.value)} />
-                  {(fromDate||toDate) && <button className="fm-clear-btn" onClick={() => { setFromDate(''); setToDate(''); }}>clear ×</button>}
+                  {(fromDate || toDate) && <button className="fm-clear-btn" onClick={() => { setFromDate(''); setToDate(''); }}>clear ×</button>}
                 </div>
 
                 {/* BO selector chips */}
@@ -2448,7 +2450,7 @@ export default function FMDashboard() {
                         const boLeads = getLeadsForBO(bo.id);
                         const boMeetings = filteredMeetings.filter(m => m.boId === bo.id);
                         const conv = boMeetings.filter(m => m.status === 'Converted').length;
-                        const convRate = boMeetings.length ? Math.round(conv/boMeetings.length*100) : 0;
+                        const convRate = boMeetings.length ? Math.round(conv / boMeetings.length * 100) : 0;
                         const boHot = boLeads.filter(l => l.priority === 'Hot').length;
                         const boCalls = boLeads.reduce((s, l) => s + (l.callCount || 0), 0);
                         const boOD = boLeads.filter(l => l.followUpDate && l.followUpDate < today).length;
@@ -2510,10 +2512,10 @@ export default function FMDashboard() {
                                         <div style={{ fontSize: '9px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '1.5px', marginBottom: '8px' }}>CALL ACTIVITY</div>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                                           {[
-                                            { v: boLeads.reduce((s, l) => s + (l.callCount||0), 0), l: 'TOTAL CALLS', c: 'var(--accent)' },
-                                            { v: +(boLeads.length > 0 ? (boLeads.reduce((s,l) => s+(l.callCount||0),0)/boLeads.length).toFixed(1) : 0), l: 'AVG/LEAD', c: 'var(--purple)' },
+                                            { v: boLeads.reduce((s, l) => s + (l.callCount || 0), 0), l: 'TOTAL CALLS', c: 'var(--accent)' },
+                                            { v: +(boLeads.length > 0 ? (boLeads.reduce((s, l) => s + (l.callCount || 0), 0) / boLeads.length).toFixed(1) : 0), l: 'AVG/LEAD', c: 'var(--purple)' },
                                             { v: boLeads.filter(l => !l.callCount || l.callCount === 0).length, l: 'NOT CALLED', c: '#ff4757' },
-                                            { v: boLeads.filter(l => (l.callCount||0) >= 3).length, l: '3+ CALLS', c: '#f59e0b' },
+                                            { v: boLeads.filter(l => (l.callCount || 0) >= 3).length, l: '3+ CALLS', c: '#f59e0b' },
                                           ].map(item => <StatPill key={item.l} label={item.l} val={item.v} color={item.c} />)}
                                         </div>
                                       </div>
@@ -2538,7 +2540,7 @@ export default function FMDashboard() {
                                                 <td><Badge cls={l.numberStatus === 'Connected' ? 'fm-badge-success' : l.numberStatus === 'Not Connected' ? 'fm-badge-danger' : 'fm-badge-warning'}>{l.numberStatus || '—'}</Badge></td>
                                                 <td><Badge cls={l.leadStatus === 'Interested' ? 'fm-badge-success' : l.leadStatus === 'Not Interested' ? 'fm-badge-danger' : 'fm-badge-default'}>{l.leadStatus || '—'}</Badge></td>
                                                 <td>{l.priority ? <Badge cls={`fm-badge-${l.priority.toLowerCase()}`}>{l.priority}</Badge> : <span style={{ color: 'var(--text3)' }}>—</span>}</td>
-                                                <td style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: (l.callCount||0) === 0 ? 'var(--danger)' : (l.callCount||0) >= 3 ? 'var(--warning)' : 'var(--accent)' }}>{l.callCount || 0}</td>
+                                                <td style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: (l.callCount || 0) === 0 ? 'var(--danger)' : (l.callCount || 0) >= 3 ? 'var(--warning)' : 'var(--accent)' }}>{l.callCount || 0}</td>
                                                 <td>{fuDate ? <span style={{ fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, color: isOD ? '#ff4757' : isToday ? '#f59e0b' : '#00d4aa' }}>{isOD ? '⚠ ' : isToday ? '● ' : ''}{fuDate}</span> : <span style={{ color: 'var(--text3)' }}>—</span>}</td>
                                                 <td style={{ color: 'var(--accent)', fontWeight: 600 }}>₹{l.loanRequirement}</td>
                                               </tr>
@@ -2573,7 +2575,7 @@ export default function FMDashboard() {
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input type="date" className="fm-date-input" value={fromDate} onChange={e => setFromDate(e.target.value)} />
                     <input type="date" className="fm-date-input" value={toDate} onChange={e => setToDate(e.target.value)} />
-                    {(fromDate||toDate) && <button className="fm-clear-btn" onClick={() => { setFromDate(''); setToDate(''); }}>clear ×</button>}
+                    {(fromDate || toDate) && <button className="fm-clear-btn" onClick={() => { setFromDate(''); setToDate(''); }}>clear ×</button>}
                   </div>
                 </div>
 
@@ -2703,7 +2705,7 @@ export default function FMDashboard() {
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input type="date" className="fm-date-input" value={fromDate} onChange={e => setFromDate(e.target.value)} />
                     <input type="date" className="fm-date-input" value={toDate} onChange={e => setToDate(e.target.value)} />
-                    {(fromDate||toDate) && <button className="fm-clear-btn" onClick={() => { setFromDate(''); setToDate(''); }}>clear ×</button>}
+                    {(fromDate || toDate) && <button className="fm-clear-btn" onClick={() => { setFromDate(''); setToDate(''); }}>clear ×</button>}
                   </div>
                 </div>
                 <div className="fm-card">
@@ -2718,7 +2720,7 @@ export default function FMDashboard() {
                         const walkin = bdmMtgs.filter(m => m.meetingType === 'Walk-in').length;
                         const reschedule = bdmMtgs.filter(m => m.status === 'Reschedule Requested').length;
                         const mini = bdmMtgs.filter(m => m.miniLogin).length;
-                        const convRate = bdmMtgs.length ? Math.round(conv/bdmMtgs.length*100) : 0;
+                        const convRate = bdmMtgs.length ? Math.round(conv / bdmMtgs.length * 100) : 0;
                         return (
                           <tr key={bdm.id}>
                             <td className="pri">
@@ -2750,7 +2752,7 @@ export default function FMDashboard() {
                   <table className="fm-table">
                     <thead><tr><th>Date</th><th>Time</th><th>Client</th><th>BDM</th><th>TC</th><th>Product</th><th>Amount</th><th>Status</th></tr></thead>
                     <tbody>
-                      {filteredMeetings.slice().sort((a,b) => b.date.localeCompare(a.date)).slice(0, 15).map(m => {
+                      {filteredMeetings.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15).map(m => {
                         const lead = leads.find(l => l.id === m.leadId);
                         const bdm = users.find(u => u.id === m.bdmId);
                         const tc = users.find(u => u.id === m.tcId);
@@ -2785,7 +2787,7 @@ export default function FMDashboard() {
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input type="date" className="fm-date-input" value={fromDate} onChange={e => setFromDate(e.target.value)} />
                     <input type="date" className="fm-date-input" value={toDate} onChange={e => setToDate(e.target.value)} />
-                    {(fromDate||toDate) && <button className="fm-clear-btn" onClick={() => { setFromDate(''); setToDate(''); }}>clear ×</button>}
+                    {(fromDate || toDate) && <button className="fm-clear-btn" onClick={() => { setFromDate(''); setToDate(''); }}>clear ×</button>}
                   </div>
                 </div>
                 <div className="fm-kpi-grid" style={{ gridTemplateColumns: 'repeat(4, minmax(0,1fr))' }}>
@@ -2862,6 +2864,16 @@ export default function FMDashboard() {
               </div>
             )}
 
+
+
+            {activeTab === 'report' && (
+              <FMReport
+                users={users} leads={leads}
+                meetings={meetings} meetingRequests={meetingRequests} teams={teams}
+              />
+            )}
+
+          
             {/* ════ LEADS ════ */}
             {activeTab === 'leads' && (
               <div className="fade-in">
@@ -2906,7 +2918,7 @@ export default function FMDashboard() {
                         </div>
                         <div className="fm-form-field">
                           <div className="fm-field-label">Phone</div>
-                          <input className="fm-input" value={leadInput.phoneNumber} onChange={e => setLeadInput(p => ({ ...p, phoneNumber: e.target.value.replace(/\D/g,'') }))} placeholder="10 digits" />
+                          <input className="fm-input" value={leadInput.phoneNumber} onChange={e => setLeadInput(p => ({ ...p, phoneNumber: e.target.value.replace(/\D/g, '') }))} placeholder="10 digits" />
                         </div>
                       </div>
                       <div className="fm-form-field" style={{ marginBottom: '10px' }}>
@@ -2946,7 +2958,7 @@ export default function FMDashboard() {
                             <td><Badge cls={l.numberStatus === 'Connected' ? 'fm-badge-success' : l.numberStatus === 'Not Connected' ? 'fm-badge-danger' : 'fm-badge-default'}>{l.numberStatus || '—'}</Badge></td>
                             <td><Badge cls={l.leadStatus === 'Interested' ? 'fm-badge-success' : l.leadStatus === 'Not Interested' ? 'fm-badge-danger' : 'fm-badge-default'}>{l.leadStatus || '—'}</Badge></td>
                             <td>{l.priority ? <Badge cls={`fm-badge-${l.priority.toLowerCase()}`}>{l.priority}</Badge> : <span style={{ color: 'var(--text3)' }}>—</span>}</td>
-                            <td style={{ fontFamily: "'JetBrains Mono', monospace", color: (l.callCount||0) > 0 ? 'var(--teal)' : 'var(--text3)', fontWeight: 600 }}>{l.callCount || 0}</td>
+                            <td style={{ fontFamily: "'JetBrains Mono', monospace", color: (l.callCount || 0) > 0 ? 'var(--teal)' : 'var(--text3)', fontWeight: 600 }}>{l.callCount || 0}</td>
                             <td>{fuDate ? <span style={{ fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", color: isOD ? '#ff4757' : '#00d4aa', fontWeight: 600 }}>{isOD ? '⚠ ' : ''}{fuDate}</span> : <span style={{ color: 'var(--text3)' }}>—</span>}</td>
                             <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: 'var(--text3)' }}>{l.assignedDate}</td>
                           </tr>
@@ -2974,7 +2986,7 @@ export default function FMDashboard() {
                       {users.filter(u => u.role !== 'FM').map(user => {
                         const userTeam = teams.find(t => t.boIds.includes(user.id) || t.tcId === user.id);
                         const isEditing = editingUser === user.id;
-                        const roleColors: Record<string,string> = { BO: 'fm-badge-accent', TC: 'fm-badge-teal', BDM: 'fm-badge-purple', BDO: 'fm-badge-warning' };
+                        const roleColors: Record<string, string> = { BO: 'fm-badge-accent', TC: 'fm-badge-teal', BDM: 'fm-badge-purple', BDO: 'fm-badge-warning' };
                         return (
                           <tr key={user.id}>
                             <td className="pri">{user.name}</td>
@@ -2982,7 +2994,7 @@ export default function FMDashboard() {
                             <td>
                               {isEditing ? (
                                 <select className="fm-select fm-select-sm" value={editRole} onChange={e => setEditRole(e.target.value as UserRole)}>
-                                  {['BO','TC','BDM','BDO'].map(r => <option key={r} value={r}>{r}</option>)}
+                                  {['BO', 'TC', 'BDM', 'BDO'].map(r => <option key={r} value={r}>{r}</option>)}
                                 </select>
                               ) : <Badge cls={roleColors[user.role] || 'fm-badge-default'}>{user.role}</Badge>}
                             </td>
