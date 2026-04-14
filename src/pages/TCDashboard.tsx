@@ -1289,21 +1289,21 @@ type Theme = 'dark' | 'light';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function statusBadge(status: string) {
   const map: Record<string, string> = {
-    'Converted':       'badge-converted',
-    'Meeting Done':    'badge-done',
-    'Follow-Up':       'badge-followup',
-    'Not Done':        'badge-notdone',
-    'Pending':         'badge-pending',
-    'Scheduled':       'badge-scheduled',
-    'Approved':        'badge-approved',
-    'Rejected':        'badge-rejected',
-    'Interested':      'badge-interested',
-    'Not Interested':  'badge-notint',
-    'Eligible':        'badge-eligible',
-    'Not Eligible':    'badge-notdone',
-    'Connected':       'badge-connected',
-    'Not Connected':   'badge-notconn',
-    'Mobile Off':      'badge-mobileoff',
+    'Converted': 'badge-converted',
+    'Meeting Done': 'badge-done',
+    'Follow-Up': 'badge-followup',
+    'Not Done': 'badge-notdone',
+    'Pending': 'badge-pending',
+    'Scheduled': 'badge-scheduled',
+    'Approved': 'badge-approved',
+    'Rejected': 'badge-rejected',
+    'Interested': 'badge-interested',
+    'Not Interested': 'badge-notint',
+    'Eligible': 'badge-eligible',
+    'Not Eligible': 'badge-notdone',
+    'Connected': 'badge-connected',
+    'Not Connected': 'badge-notconn',
+    'Mobile Off': 'badge-mobileoff',
     'Incoming Barred': 'badge-mobileoff',
     'Reschedule Requested': 'badge-reschedule',
   };
@@ -1352,18 +1352,18 @@ function FunnelRow({ label, val, total, color }: { label: string; val: number; t
 
 // ─── Nav Icons (inline SVG) ────────────────────────────────────────────────────
 const Icons = {
-  dashboard: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-  team: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75M21 21v-2a4 4 0 00-3-3.87"/></svg>,
-  requests: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>,
-  calendar: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
-  clock: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>,
-  bell: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
-  check: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
-  x: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  refresh: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>,
-  logout: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
-  sun: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>,
-  moon: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>,
+  dashboard: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
+  team: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" /><path d="M16 3.13a4 4 0 010 7.75M21 21v-2a4 4 0 00-3-3.87" /></svg>,
+  requests: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><path d="M9 12h6M9 16h4" /></svg>,
+  calendar: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>,
+  clock: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>,
+  bell: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>,
+  check: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
+  x: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+  refresh: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" /></svg>,
+  logout: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>,
+  sun: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>,
+  moon: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>,
 };
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -1480,6 +1480,35 @@ export default function TCDashboard() {
     resetForm(reqId);
     toast.success('Meeting scheduled');
   };
+
+  // const scheduleMeeting = async (reqId: string, leadId: string, boId: string) => {
+  //   const f = getForm(reqId);
+  //   if (!f.bdm || !f.slot) { toast.error('Select BDM and time slot'); return; }
+
+  //   const meetingId = `m${Date.now()}`; // ✅ Ek hi ID, dono jagah use karo
+
+  //   await addMeeting({
+  //     id: meetingId, leadId, bdmId: f.bdm, tcId: currentUser!.id, boId,
+  //     date: today, timeSlot: f.slot, status: 'Scheduled',
+  //     meetingType: f.meetingType,
+  //     clientName: f.clientName || undefined,
+  //     location: f.location || undefined,
+  //     state: f.state || undefined,
+  //     productType: f.productType || undefined,
+  //     finalRequirement: f.finalReq || undefined,
+  //     collateralValue: f.collateral || undefined,
+  //   });
+
+  //   // ✅ meetingRequested: false reset karo — BO ke dashboard pe button nahi aayega
+  //   await updateLead(leadId, {
+  //     meetingId: meetingId,        // ✅ Same ID
+  //     meetingRequested: false,     // ✅ Flag clear karo
+  //     meetingApproved: true,       // ✅ Approved mark karo
+  //   });
+
+  //   resetForm(reqId);
+  //   toast.success('Meeting scheduled');
+  // };
   const rescheduleExistingMeeting = async (meetingId: string) => {
     const f = getForm(meetingId);
     if (!f.bdm || !f.slot) { toast.error('Select BDM and time slot'); return; }
@@ -1590,15 +1619,15 @@ export default function TCDashboard() {
 
     // ── BO Activity fields (from DB via BO's updateLead calls) ──
     const todayDate = new Date().toISOString().split('T')[0];
-    const hotLeads   = boLeads.filter(l => l.priority === 'Hot').length;
-    const warmLeads  = boLeads.filter(l => l.priority === 'Warm').length;
-    const coldLeads  = boLeads.filter(l => l.priority === 'Cold').length;
+    const hotLeads = boLeads.filter(l => l.priority === 'Hot').length;
+    const warmLeads = boLeads.filter(l => l.priority === 'Warm').length;
+    const coldLeads = boLeads.filter(l => l.priority === 'Cold').length;
     const totalCalls = boLeads.reduce((s, l) => s + (l.callCount || 0), 0);
-    const fuOverdue  = boLeads.filter(l => l.followUpDate && l.followUpDate < todayDate).length;
-    const fuToday    = boLeads.filter(l => l.followUpDate === todayDate).length;
+    const fuOverdue = boLeads.filter(l => l.followUpDate && l.followUpDate < todayDate).length;
+    const fuToday = boLeads.filter(l => l.followUpDate === todayDate).length;
     const fuUpcoming = boLeads.filter(l => l.followUpDate && l.followUpDate > todayDate).length;
-    const notCalled  = boLeads.filter(l => !l.callCount || l.callCount === 0).length;
-    const avgCalls   = boLeads.length > 0 ? Math.round((totalCalls / boLeads.length) * 10) / 10 : 0;
+    const notCalled = boLeads.filter(l => !l.callCount || l.callCount === 0).length;
+    const avgCalls = boLeads.length > 0 ? Math.round((totalCalls / boLeads.length) * 10) / 10 : 0;
 
     return (
       <div>
@@ -1636,9 +1665,9 @@ export default function TCDashboard() {
             <div className="panel-section-label">LEAD PRIORITY TAGS</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginTop: '8px' }}>
               {[
-                { label: 'Hot',     val: hotLeads,  color: '#ff4757', bg: 'rgba(255,71,87,0.1)' },
-                { label: 'Warm',    val: warmLeads, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-                { label: 'Cold',    val: coldLeads, color: 'var(--accent)', bg: 'rgba(61,127,255,0.1)' },
+                { label: 'Hot', val: hotLeads, color: '#ff4757', bg: 'rgba(255,71,87,0.1)' },
+                { label: 'Warm', val: warmLeads, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+                { label: 'Cold', val: coldLeads, color: 'var(--accent)', bg: 'rgba(61,127,255,0.1)' },
                 { label: 'Untagged', val: boLeads.filter(l => !l.priority).length, color: 'var(--text3)', bg: 'transparent' },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1662,9 +1691,9 @@ export default function TCDashboard() {
             )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '7px', marginTop: fuOverdue > 0 ? 0 : '8px' }}>
               {[
-                { v: fuOverdue,  l: 'OVERDUE',  c: '#ff4757' },
-                { v: fuToday,    l: 'DUE TODAY', c: '#f59e0b' },
-                { v: fuUpcoming, l: 'UPCOMING',  c: '#00d4aa' },
+                { v: fuOverdue, l: 'OVERDUE', c: '#ff4757' },
+                { v: fuToday, l: 'DUE TODAY', c: '#f59e0b' },
+                { v: fuUpcoming, l: 'UPCOMING', c: '#00d4aa' },
                 { v: boLeads.filter(l => l.followUpDate).length, l: 'TOTAL SET', c: 'var(--accent)' },
               ].map(item => (
                 <div key={item.l} style={{ background: 'var(--bg3)', borderRadius: '8px', padding: '8px 10px', border: '1px solid var(--border)' }}>
@@ -1681,8 +1710,8 @@ export default function TCDashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '7px', marginTop: '8px' }}>
               {[
                 { v: totalCalls, l: 'TOTAL CALLS', c: 'var(--accent)' },
-                { v: avgCalls,   l: 'AVG / LEAD',  c: 'var(--purple)' },
-                { v: notCalled,  l: 'NOT CALLED',  c: '#ff4757' },
+                { v: avgCalls, l: 'AVG / LEAD', c: 'var(--purple)' },
+                { v: notCalled, l: 'NOT CALLED', c: '#ff4757' },
                 { v: boLeads.filter(l => (l.callCount || 0) >= 3).length, l: '3+ ATTEMPTS', c: '#f59e0b' },
               ].map(item => (
                 <div key={item.l} style={{ background: 'var(--bg3)', borderRadius: '8px', padding: '8px 10px', border: '1px solid var(--border)' }}>
@@ -1716,10 +1745,10 @@ export default function TCDashboard() {
               <div className="panel-section-label">MEETING RESULTS</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 {[
-                  { v: done,        l: 'DONE',        c: '#00d4aa' },
-                  { v: notDone,     l: 'NOT DONE',     c: '#ff4757' },
-                  { v: followUp,    l: 'FOLLOW-UP',    c: '#a78bfa' },
-                  { v: pendingReqs, l: 'PENDING REQ',  c: pendingReqs > 0 ? '#f59e0b' : 'var(--text3)' },
+                  { v: done, l: 'DONE', c: '#00d4aa' },
+                  { v: notDone, l: 'NOT DONE', c: '#ff4757' },
+                  { v: followUp, l: 'FOLLOW-UP', c: '#a78bfa' },
+                  { v: pendingReqs, l: 'PENDING REQ', c: pendingReqs > 0 ? '#f59e0b' : 'var(--text3)' },
                 ].map(item => (
                   <div key={item.l}>
                     <div style={{ fontSize: '18px', fontWeight: 700, color: item.c }}>{item.v}</div>
@@ -1781,25 +1810,29 @@ export default function TCDashboard() {
                     <td>
                       {l.priority
                         ? <span style={{
-                            fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '5px',
-                            fontFamily: "'JetBrains Mono', monospace",
-                            background: l.priority === 'Hot' ? 'rgba(255,71,87,0.12)' : l.priority === 'Warm' ? 'rgba(245,158,11,0.12)' : 'rgba(61,127,255,0.12)',
-                            color:      l.priority === 'Hot' ? '#ff4757' : l.priority === 'Warm' ? '#f59e0b' : 'var(--accent)',
-                          }}>{l.priority}</span>
+                          fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '5px',
+                          fontFamily: "'JetBrains Mono', monospace",
+                          background: l.priority === 'Hot' ? 'rgba(255,71,87,0.12)' : l.priority === 'Warm' ? 'rgba(245,158,11,0.12)' : 'rgba(61,127,255,0.12)',
+                          color: l.priority === 'Hot' ? '#ff4757' : l.priority === 'Warm' ? '#f59e0b' : 'var(--accent)',
+                        }}>{l.priority}</span>
                         : <span style={{ color: 'var(--text3)', fontSize: '10px' }}>—</span>}
                     </td>
                     <td>
-                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', fontWeight: 700,
-                        color: (l.callCount || 0) === 0 ? 'var(--danger)' : (l.callCount || 0) >= 3 ? 'var(--warning)' : 'var(--accent)' }}>
+                      <span style={{
+                        fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', fontWeight: 700,
+                        color: (l.callCount || 0) === 0 ? 'var(--danger)' : (l.callCount || 0) >= 3 ? 'var(--warning)' : 'var(--accent)'
+                      }}>
                         {l.callCount || 0}
                       </span>
                     </td>
                     <td>
                       {fuDate
-                        ? <span style={{ fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
-                            color: isOverdue ? '#ff4757' : isDueToday ? '#f59e0b' : '#00d4aa' }}>
-                            {isOverdue ? '⚠ ' : isDueToday ? '● ' : ''}{fuDate}
-                          </span>
+                        ? <span style={{
+                          fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+                          color: isOverdue ? '#ff4757' : isDueToday ? '#f59e0b' : '#00d4aa'
+                        }}>
+                          {isOverdue ? '⚠ ' : isDueToday ? '● ' : ''}{fuDate}
+                        </span>
                         : <span style={{ color: 'var(--text3)', fontSize: '10px' }}>—</span>}
                     </td>
                     <td style={{ color: '#3d7fff', fontWeight: 600 }}>₹{l.loanRequirement}</td>
@@ -2222,10 +2255,10 @@ export default function TCDashboard() {
                 {/* KPI Cards */}
                 <div className="cc-kpi-row">
                   {[
-                    { label: 'Total Meetings', value: totalMeetings, cls: 'blue', sub: 'in selected range', bars: [4,6,5,7,6,8,7,totalMeetings], barColor: '#3d7fff' },
-                    { label: 'Converted', value: convertedCount, cls: 'green', sub: `${totalMeetings ? Math.round(convertedCount/totalMeetings*100) : 0}% conv. rate`, bars: [1,2,2,3,2,3,3,convertedCount], barColor: '#00d4aa' },
-                    { label: 'Pending', value: pendingCount, cls: 'orange', sub: 'needs follow-up', bars: [3,4,3,5,3,4,4,pendingCount], barColor: '#f59e0b' },
-                    { label: 'Active Leads', value: allTeamLeads.length, cls: 'purple', sub: `across ${myBOs.length} officers`, bars: [30,32,35,38,40,42,44,allTeamLeads.length], barColor: '#a78bfa' },
+                    { label: 'Total Meetings', value: totalMeetings, cls: 'blue', sub: 'in selected range', bars: [4, 6, 5, 7, 6, 8, 7, totalMeetings], barColor: '#3d7fff' },
+                    { label: 'Converted', value: convertedCount, cls: 'green', sub: `${totalMeetings ? Math.round(convertedCount / totalMeetings * 100) : 0}% conv. rate`, bars: [1, 2, 2, 3, 2, 3, 3, convertedCount], barColor: '#00d4aa' },
+                    { label: 'Pending', value: pendingCount, cls: 'orange', sub: 'needs follow-up', bars: [3, 4, 3, 5, 3, 4, 4, pendingCount], barColor: '#f59e0b' },
+                    { label: 'Active Leads', value: allTeamLeads.length, cls: 'purple', sub: `across ${myBOs.length} officers`, bars: [30, 32, 35, 38, 40, 42, 44, allTeamLeads.length], barColor: '#a78bfa' },
                   ].map(k => {
                     const max = Math.max(...k.bars) || 1;
                     return (
@@ -2235,7 +2268,7 @@ export default function TCDashboard() {
                         <div className="cc-kpi-sub">{k.sub}</div>
                         <div className="cc-kpi-bar-wrap">
                           {k.bars.map((v, i) => (
-                            <div key={i} className="cc-kpi-bar" style={{ height: `${Math.max(3, Math.round((v/max)*26))}px`, background: k.barColor }} />
+                            <div key={i} className="cc-kpi-bar" style={{ height: `${Math.max(3, Math.round((v / max) * 26))}px`, background: k.barColor }} />
                           ))}
                         </div>
                       </div>
