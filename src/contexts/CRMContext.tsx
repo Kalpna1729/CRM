@@ -457,7 +457,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       id: req.id, lead_id: req.leadId, bo_id: req.boId,
       tc_id: req.tcId, status: req.status,
     });
-    // setMeetingRequests(prev => [...prev, req]);
+    setMeetingRequests(prev => [...prev, req]);
   }, []);
 
   const updateMeetingRequest = useCallback(async (reqId: string, updates: Partial<MeetingRequest>) => {
