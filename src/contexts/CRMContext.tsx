@@ -183,7 +183,13 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     ): T[] {
       const { eventType, new: newRow, old: oldRow } = payload;
       // if (eventType === 'INSERT') return [...prev, mapper(newRow)];
-      if (eventType === 'INSERT') return [mapper(newRow), ...prev];
+      if (eventType === 'INSERT') {
+        // Guard against duplicates — can happen when manual optimistic update
+        // races with the realtime event, or when multiple clients (e.g. local
+        // dev + production) share the same Supabase project.
+        if (prev.some(item => item.id === newRow.id)) return prev;
+        return [mapper(newRow), ...prev];
+      }
       if (eventType === 'UPDATE') return prev.map(item => item.id === newRow.id ? mapper(newRow) : item);
       if (eventType === 'DELETE') return prev.filter(item => item.id !== oldRow.id);
       return prev;
@@ -426,7 +432,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       final_requirement: meeting.finalRequirement ?? null,
       collateral_value: meeting.collateralValue ?? null,
     });
-    setMeetings(prev => [...prev, meeting]);
+    // Realtime INSERT event handles state update — no manual set needed.
   }, []);
 
   const updateMeeting = useCallback(async (meetingId: string, updates: Partial<Meeting>) => {
@@ -457,7 +463,9 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       id: req.id, lead_id: req.leadId, bo_id: req.boId,
       tc_id: req.tcId, status: req.status,
     });
-    setMeetingRequests(prev => [...prev, req]);
+    // NOTE: Do NOT manually update state here.
+    // The realtime subscription on 'meeting_requests' handles the INSERT event
+    // and adds it to state automatically. Doing both causes duplicate entries.
   }, []);
 
   const updateMeetingRequest = useCallback(async (reqId: string, updates: Partial<MeetingRequest>) => {
@@ -468,11 +476,10 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addRemark = useCallback(async (remark: Omit<LeadRemark, 'id' | 'updatedAt'>) => {
-    const { data } = await supabase
+    await supabase
       .from('lead_remarks')
-      .insert({ lead_id: remark.leadId, remark: remark.remark, created_by: remark.createdBy })
-      .select().single();
-    if (data) setLeadRemarks(prev => [mapRemark(data), ...prev]);
+      .insert({ lead_id: remark.leadId, remark: remark.remark, created_by: remark.createdBy });
+    // Realtime INSERT event handles state update.
   }, []);
 
   const updateRemark = useCallback(async (remarkId: string, newText: string) => {
@@ -498,11 +505,10 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addMeetingRemark = useCallback(async (meetingId: string, remark: string, createdBy: string) => {
-    const { data } = await supabase
+    await supabase
       .from('meeting_remarks')
-      .insert({ meeting_id: meetingId, remark, created_by: createdBy })
-      .select().single();
-    if (data) setMeetingRemarks(prev => [mapMeetingRemark(data), ...prev]);
+      .insert({ meeting_id: meetingId, remark, created_by: createdBy });
+    // Realtime INSERT event handles state update.
   }, []);
 
   const addLoginUpdate = useCallback(async (meetingId: string, loginType: LoginHistory['loginType'], createdBy: string) => {
