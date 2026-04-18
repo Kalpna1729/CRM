@@ -17,8 +17,8 @@ type Priority = 'Hot' | 'Warm' | 'Cold' | '';
 //   callCount?:   number
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const numberStatuses: NumberStatus[] = ['Connected', 'Not Connected', 'Mobile Off', 'Incoming Barred', 'Invalid Number'];
-const leadStatuses: LeadStatus[] = ['Interested', 'Not Interested', 'Eligible', 'Not Eligible', 'Pending', 'Language Barrier', 'Ringing'];
+const numberStatuses: NumberStatus[] = ['Connected', 'Not Connected'];
+const leadStatuses: LeadStatus[] = [, 'Mobile Off', 'Incoming Barred', 'Invalid Number','Interested', 'Not Interested', 'Eligible', 'Not Eligible', 'Pending', 'Language Barrier', 'Ringing'];
 const leadTypes: LeadType[] = ['Client', 'DSA'];
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
