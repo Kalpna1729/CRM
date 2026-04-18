@@ -10,8 +10,8 @@ export interface User {
   authId?: string;
 }
 
-export type NumberStatus = 'Connected' | 'Not Connected' | 'Mobile Off' | 'Incoming Barred' | 'Invalid Number' | '';
-export type LeadStatus = 'Interested' | 'Not Interested' | 'Eligible' | 'Not Eligible' | 'Pending' | 'Language Barrier' | 'Ringing' | '';
+export type NumberStatus = 'Connected' | 'Not Connected' | '';
+export type LeadStatus = 'Mobile Off' | 'Incoming Barred' | 'Invalid Number' |'Interested' | 'Not Interested' | 'Eligible' | 'Not Eligible' | 'Pending' | 'Language Barrier' | 'Ringing' | '';
 export type LeadType = 'Client' | 'DSA' | '';
 // export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject';
 export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject' | 'Scheduled' | 'Reschedule Requested';
