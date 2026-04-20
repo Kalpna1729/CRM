@@ -11,7 +11,7 @@ export interface User {
 }
 
 export type NumberStatus = 'Connected' | 'Not Connected' | '';
-export type LeadStatus = 'Mobile Off' | 'Incoming Barred' | 'Invalid Number' |'Interested' | 'Not Interested' | 'Eligible' | 'Not Eligible' | 'Pending' | 'Language Barrier' | 'Ringing' | '';
+export type LeadStatus = 'Mobile Off' | 'Incoming Barred' | 'Invalid Number' | 'Interested' | 'Not Interested' | 'Eligible' | 'Not Eligible' | 'Pending' | 'Language Barrier' | 'Ringing' | '';
 export type LeadType = 'Client' | 'DSA' | '';
 // export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject';
 export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject' | 'Scheduled' | 'Reschedule Requested';
@@ -36,8 +36,8 @@ export interface Lead {
   meetingRequested: boolean;
   meetingApproved: boolean;
   meetingId?: string;
-  priority?: 'Hot' | 'Warm' | 'Cold';
-  followUpDate?: string;   // "YYYY-MM-DD"
+  priority?: 'Hot' | 'Warm' | 'Cold' | null;
+  followUpDate?: string | null;
   callCount?: number;
 }
 
