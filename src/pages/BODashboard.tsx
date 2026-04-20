@@ -18,7 +18,7 @@ type Priority = 'Hot' | 'Warm' | 'Cold' | '';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const numberStatuses: NumberStatus[] = ['Connected', 'Not Connected'];
-const leadStatuses: LeadStatus[] = [, 'Mobile Off', 'Incoming Barred', 'Invalid Number','Interested', 'Not Interested', 'Eligible', 'Not Eligible', 'Pending', 'Language Barrier', 'Ringing'];
+const leadStatuses: LeadStatus[] = [, 'Mobile Off', 'Incoming Barred', 'Invalid Number', 'Interested', 'Not Interested', 'Eligible', 'Not Eligible', 'Pending', 'Language Barrier', 'Ringing'];
 const leadTypes: LeadType[] = ['Client', 'DSA'];
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -267,11 +267,11 @@ export default function BODashboard() {
     toast.success('Call logged');
   };
   const setPriority = async (leadId: string, p: Priority) => {
-    await updateLead(leadId, { priority: p || undefined });
+    await updateLead(leadId, { priority: p || null });
     toast.success(p ? `Priority set to ${p}` : 'Priority cleared');
   };
   const setFollowup = async (leadId: string, date: string) => {
-    await updateLead(leadId, { followUpDate: date || undefined });
+    await updateLead(leadId, { followUpDate: date || null });
     toast.success(date ? 'Follow-up reminder set' : 'Follow-up cleared');
   };
 
@@ -945,7 +945,7 @@ export default function BODashboard() {
                     <span>{Icons.bell}</span>
                     <button className="cc-btn-sm cc-btn-ghost" style={{ borderColor: 'rgba(245,158,11,0.3)', color: 'var(--warning)' }} onClick={() => setActiveTab('history')}>
                       {/* {Icons.bell} {followupAlerts.length} follow-up{followupAlerts.length > 1 ? 's' : ''} due */}
-                    <div className="alert-text"><strong style={{ color: 'var(--orange)' }}>{followupAlerts.length} follow-up{followupAlerts.length > 1 ? 's' : ''}</strong> due — {followupAlerts.map(f => f.lead?.clientName).join(', ')}</div>
+                      <div className="alert-text"><strong style={{ color: 'var(--orange)' }}>{followupAlerts.length} follow-up{followupAlerts.length > 1 ? 's' : ''}</strong> due — {followupAlerts.map(f => f.lead?.clientName).join(', ')}</div>
                     </button>
                   </div>
                 )}
