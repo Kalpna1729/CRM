@@ -84,6 +84,7 @@ export default function BODashboard() {
     currentUser, leads, users, teams, meetings,
     meetingRequests, leadRemarks,
     updateLead, addMeetingRequest, addRemark, updateRemark, deleteRemark, logout,
+    followUpReminders, addFollowUpReminder, deleteFollowUpReminder, markFollowUpDone,
   } = useCRM();
   const { withLoading, isLoading } = useLoading();
 
@@ -104,6 +105,7 @@ export default function BODashboard() {
   // NOTE: priority, followUpDate, callCount are now stored in Lead via updateLead → DB persisted
   // callLogs remain local (timestamps/notes) — only callCount goes to DB
   const [callLogs, setCallLogs] = useState<Record<string, { time: string; note: string }[]>>({});
+  const [fuInput, setFuInput] = useState<Record<string, { date: string; remark: string }>>({});
 
   // Live clock
   useEffect(() => {
@@ -203,11 +205,19 @@ export default function BODashboard() {
   }, [myLeads, fromDate, toDate, statusFilter, numberStatusFilter]);
 
   // Follow-up leads for today/overdue — read from DB field lead.followUpDate
+  // const followupAlerts = useMemo(() => {
+  //   return followUpReminders
+  //     .filter(r => !r.isDone && r.reminderDate <= today)
+  //     .map(r => ({ lead: myLeads.find(l => l.id === r.leadId)!, date: r.reminderDate, remark: r.remark }))
+  //     .filter(a => a.lead);
+  // }, [followUpReminders, myLeads, today]);
+
   const followupAlerts = useMemo(() => {
-    return myLeads
-      .filter(l => l.followUpDate && l.followUpDate <= today)
-      .map(l => ({ lead: l, date: l.followUpDate! }));
-  }, [myLeads, today]);
+  return followUpReminders
+    .filter(r => !r.isDone && r.reminderDate <= today)
+    .map(r => ({ lead: myLeads.find(l => l.id === r.leadId)!, date: r.reminderDate, remark: r.remark }))
+    .filter(a => a.lead);
+}, [followUpReminders, myLeads, today]);
 
   // Overview stats
   const connected = todayLeads.filter(l => l.numberStatus === 'Connected').length;
@@ -338,10 +348,15 @@ export default function BODashboard() {
           <td>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
               {priorityBadge(prio)}
-              {fuDate && (
+              {/* {fuDate && (
                 <span className={`fu-chip ${isOverdue ? 'fu-overdue' : isDueToday ? 'fu-today' : 'fu-future'}`}>
                   {Icons.bell} {fuDate}
                 </span>
+              )} */}
+              {followUpReminders.filter(r => r.leadId === lead.id && !r.isDone).length > 0 && (
+                <div className="fu-chip">
+                  {Icons.bell} {followUpReminders.filter(r => r.leadId === lead.id && !r.isDone).length} reminder{followUpReminders.filter(r => r.leadId === lead.id && !r.isDone).length > 1 ? 's' : ''}
+                </div>
               )}
             </div>
           </td>
@@ -388,7 +403,7 @@ export default function BODashboard() {
                   </div>
 
                   {/* ── Follow-up ── */}
-                  <div className="exp-section">
+                  {/* <div className="exp-section">
                     <div className="exp-section-label">{Icons.follow} FOLLOW-UP REMINDER</div>
                     <div style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
                       <input type="date" className="cc-date-input" value={fuDate} min={today}
@@ -402,6 +417,71 @@ export default function BODashboard() {
                         {isOverdue ? '⚠ Overdue' : isDueToday ? '● Due today' : `Scheduled for ${fuDate}`}
                       </div>
                     )}
+                  </div> */}
+                  {/* ── Follow-up ── */}
+                  <div className="exp-section">
+                    <div className="exp-section-label">{Icons.follow} FOLLOW-UP REMINDERS</div>
+
+                    {/* Existing reminders list */}
+                    {followUpReminders.filter(r => r.leadId === lead.id).length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+                        {followUpReminders
+                          .filter(r => r.leadId === lead.id)
+                          .sort((a, b) => a.reminderDate.localeCompare(b.reminderDate))
+                          .map(r => (
+                            <div key={r.id} style={{
+                              display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '8px 10px',
+                              background: r.isDone ? 'rgba(0,0,0,0.1)' : r.reminderDate < today ? 'rgba(255,71,87,0.08)' : r.reminderDate === today ? 'rgba(245,158,11,0.08)' : 'rgba(61,127,255,0.06)',
+                              borderRadius: '8px', border: `1px solid ${r.isDone ? 'transparent' : r.reminderDate < today ? 'rgba(255,71,87,0.2)' : r.reminderDate === today ? 'rgba(245,158,11,0.2)' : 'rgba(61,127,255,0.15)'}`,
+                              opacity: r.isDone ? 0.5 : 1,
+                            }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '11px', fontWeight: 700, color: r.isDone ? 'var(--text3)' : r.reminderDate < today ? '#ff4757' : r.reminderDate === today ? '#f59e0b' : 'var(--accent)', fontFamily: "'JetBrains Mono', monospace" }}>
+                                  {r.isDone ? '✓ Done' : r.reminderDate < today ? '⚠ Overdue' : r.reminderDate === today ? '● Today' : r.reminderDate}
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--text2)', marginTop: '2px' }}>{r.remark}</div>
+                              </div>
+                              <div style={{ display: 'flex', gap: '4px' }}>
+                                {!r.isDone && (
+                                  <button className="icon-btn icon-btn-green" onClick={() => markFollowUpDone(r.id)} title="Mark done">{Icons.check}</button>
+                                )}
+                                <button className="icon-btn icon-btn-red" onClick={() => deleteFollowUpReminder(r.id)} title="Delete">{Icons.trash}</button>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+
+                    {/* Add new follow-up */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '10px' }}>
+                      <input
+                        type="date"
+                        className="cc-date-input"
+                        min={today}
+                        value={fuInput[lead.id]?.date || ''}
+                        onChange={e => setFuInput(prev => ({ ...prev, [lead.id]: { ...prev[lead.id], date: e.target.value } }))}
+                      />
+                      <input
+                        type="text"
+                        className="cc-input-xs"
+                        placeholder="Remark (e.g. Call back after 3 days)"
+                        value={fuInput[lead.id]?.remark || ''}
+                        onChange={e => setFuInput(prev => ({ ...prev, [lead.id]: { ...prev[lead.id], remark: e.target.value } }))}
+                      />
+                      <button
+                        className="cc-btn-sm cc-btn-ghost"
+                        disabled={!fuInput[lead.id]?.date || !fuInput[lead.id]?.remark?.trim()}
+                        onClick={async () => {
+                          const { date, remark } = fuInput[lead.id] || {};
+                          if (!date || !remark?.trim()) return;
+                          await addFollowUpReminder(lead.id, date, remark.trim());
+                          setFuInput(prev => ({ ...prev, [lead.id]: { date: '', remark: '' } }));
+                          toast.success('Follow-up added');
+                        }}
+                      >
+                        {Icons.bell} Add Follow-up
+                      </button>
+                    </div>
                   </div>
 
                   {/* ── Call Log ── */}

@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      follow_up_reminders: {
+        Row: {
+          id: string
+          lead_id: string
+          reminder_date: string
+          remark: string
+          created_by: string
+          is_done: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          lead_id: string
+          reminder_date: string
+          remark: string
+          created_by: string
+          is_done?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          lead_id?: string
+          reminder_date?: string
+          remark?: string
+          created_by?: string
+          is_done?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       duplicate_leads: {
         Row: {
           address: string | null
