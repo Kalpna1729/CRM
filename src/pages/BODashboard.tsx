@@ -89,7 +89,8 @@ export default function BODashboard() {
   const { withLoading, isLoading } = useLoading();
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [theme, setTheme] = useState<Theme>('dark');
+  // const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>('light');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

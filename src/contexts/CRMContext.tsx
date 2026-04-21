@@ -352,6 +352,9 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     if (updates.address !== undefined) dbUpdates.address = updates.address;
     if (updates.priority !== undefined) dbUpdates.priority = updates.priority || null;
     if (updates.followUpDate !== undefined) dbUpdates.follow_up_date = updates.followUpDate || null;
+    if (updates.assignedBOId !== undefined) dbUpdates.assigned_bo_id = updates.assignedBOId;
+    // circulate lead among BOs by setting assigned_bo_id to null for 10 seconds before updating to new BO, so that realtime events can trigger properly for all clients
+    if (updates.assignedDate !== undefined) dbUpdates.assigned_date = updates.assignedDate;
     if (updates.callCount !== undefined) dbUpdates.call_count = updates.callCount;
     await supabase.from('leads').update(dbUpdates).eq('id', leadId);
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, ...updates } : l));
@@ -583,7 +586,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CRMContext.Provider value={{
-     currentUser, users, leads, teams, meetings, meetingRequests, leadRemarks, duplicateLeads, meetingRemarks, loginHistory, followUpReminders, loading,
+      currentUser, users, leads, teams, meetings, meetingRequests, leadRemarks, duplicateLeads, meetingRemarks, loginHistory, followUpReminders, loading,
       login, logout, refreshData,
       addLeads, updateLead,
       addUser, updateUser, removeUser,
