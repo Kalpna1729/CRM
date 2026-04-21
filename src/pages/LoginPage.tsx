@@ -42,7 +42,7 @@ export default function LoginPage() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: "url('/image.png')",
+          backgroundImage: "url('./image.png')",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
           backgroundSize: "1000px",
@@ -56,7 +56,7 @@ export default function LoginPage() {
         <div className="text-center mb-6">
 
           <img
-            src="/image.png"
+            src="./image.png"
             alt="Lotus Logo"
             className="w-20 h-20 mx-auto mb-4 object-contain"
           />
