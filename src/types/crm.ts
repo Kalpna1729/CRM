@@ -118,3 +118,13 @@ export interface DuplicateLead {
   uploadedBy?: string;
   uploadedAt: string;
 }
+
+export interface FollowUpReminder {
+  id: string;
+  leadId: string;
+  reminderDate: string;   // "YYYY-MM-DD"
+  remark: string;
+  createdBy: string;
+  isDone: boolean;
+  createdAt: string;
+}

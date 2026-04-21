@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { User, Lead, Team, Meeting, MeetingRequest, LeadRemark, DuplicateLead, MeetingRemark, LoginHistory } from '@/types/crm';
+import { User, Lead, Team, Meeting, MeetingRequest, LeadRemark, DuplicateLead, MeetingRemark, LoginHistory, FollowUpReminder } from '@/types/crm';
 import { supabase } from '@/integrations/supabase/client';
-
 interface CRMContextType {
   currentUser: User | null;
   users: User[];
@@ -13,6 +12,7 @@ interface CRMContextType {
   duplicateLeads: DuplicateLead[];
   meetingRemarks: MeetingRemark[];
   loginHistory: LoginHistory[];
+  followUpReminders: FollowUpReminder[];
   loading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -37,6 +37,9 @@ interface CRMContextType {
   mergeDuplicateLead: (duplicateId: string) => Promise<void>;
   addMeetingRemark: (meetingId: string, remark: string, createdBy: string) => Promise<void>;
   addLoginUpdate: (meetingId: string, loginType: LoginHistory['loginType'], createdBy: string) => Promise<void>;
+  addFollowUpReminder: (leadId: string, date: string, remark: string) => Promise<void>;
+  deleteFollowUpReminder: (id: string) => Promise<void>;
+  markFollowUpDone: (id: string) => Promise<void>;
 }
 
 const CRMContext = createContext<CRMContextType | null>(null);
@@ -106,6 +109,17 @@ const mapLoginHistory = (r: any): LoginHistory => ({
   createdBy: r.created_by, createdAt: r.created_at,
 });
 
+
+const mapFollowUp = (r: any): FollowUpReminder => ({
+  id: r.id,
+  leadId: r.lead_id,
+  reminderDate: r.reminder_date,
+  remark: r.remark,
+  createdBy: r.created_by,
+  isDone: r.is_done,
+  createdAt: r.created_at,
+});
+
 export function CRMProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -117,11 +131,12 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
   const [duplicateLeads, setDuplicateLeads] = useState<DuplicateLead[]>([]);
   const [meetingRemarks, setMeetingRemarks] = useState<MeetingRemark[]>([]);
   const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
+  const [followUpReminders, setFollowUpReminders] = useState<FollowUpReminder[]>([]);
   const [loading, setLoading] = useState(true);
   const initialized = useRef(false);
 
   const fetchAllData = useCallback(async () => {
-    const [profilesRes, teamsRes, membersRes, leadsRes, meetingsRes, reqsRes, remarksRes, dupsRes, meetingRemarksRes, loginHistoryRes] = await Promise.all([
+    const [profilesRes, teamsRes, membersRes, leadsRes, meetingsRes, reqsRes, remarksRes, dupsRes, meetingRemarksRes, loginHistoryRes, followUpRes] = await Promise.all([
       supabase.from('profiles').select('*'),
       supabase.from('teams').select('*'),
       supabase.from('team_members').select('*'),
@@ -132,6 +147,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       supabase.from('duplicate_leads').select('*').order('uploaded_at', { ascending: false }),
       supabase.from('meeting_remarks').select('*').order('created_at', { ascending: false }),
       (supabase as any).from('login_history').select('*').order('created_at', { ascending: false }),
+      supabase.from('follow_up_reminders').select('*').order('reminder_date', { ascending: true }),
     ]);
 
     if (profilesRes.data) setUsers(profilesRes.data.map(mapProfile));
@@ -142,6 +158,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     if (dupsRes.data) setDuplicateLeads(dupsRes.data.map(mapDuplicateLead));
     if (meetingRemarksRes.data) setMeetingRemarks(meetingRemarksRes.data.map(mapMeetingRemark));
     if (loginHistoryRes.data) setLoginHistory(loginHistoryRes.data.map(mapLoginHistory));
+    if (followUpRes.data) setFollowUpReminders(followUpRes.data.map(mapFollowUp));
 
     if (teamsRes.data && membersRes.data) {
       const builtTeams: Team[] = teamsRes.data.map((t: any) => ({
@@ -216,6 +233,9 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'login_history' } as any, (payload) => {
         setLoginHistory(prev => applyEvent(prev, payload as any, mapLoginHistory));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'follow_up_reminders' }, (payload) => {
+        setFollowUpReminders(prev => applyEvent(prev, payload as any, mapFollowUp));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => fetchAllData())
@@ -517,6 +537,14 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       login_type: loginType,
       created_by: createdBy,
     });
+
+
+
+
+
+
+
+
     // Update the meeting boolean fields and auto-convert to 'Converted by BDM'
     const updates: any = { bdoStatus: 'Converted by BDM' };
     if (loginType === 'Mini Login') updates.miniLogin = true;
@@ -530,9 +558,32 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     await fetchAllData();
   }, [fetchAllData]);
 
+
+
+
+  const addFollowUpReminder = useCallback(async (leadId: string, date: string, remark: string) => {
+    const { data } = await supabase
+      .from('follow_up_reminders')
+      .insert({ lead_id: leadId, reminder_date: date, remark, created_by: currentUser!.id })
+      .select().single();
+    if (data) setFollowUpReminders(prev => [...prev, mapFollowUp(data)]);
+  }, [currentUser]);
+
+  const deleteFollowUpReminder = useCallback(async (id: string) => {
+    await supabase.from('follow_up_reminders').delete().eq('id', id);
+    setFollowUpReminders(prev => prev.filter(r => r.id !== id));
+  }, []);
+
+  const markFollowUpDone = useCallback(async (id: string) => {
+    await supabase.from('follow_up_reminders').update({ is_done: true }).eq('id', id);
+    setFollowUpReminders(prev => prev.map(r => r.id === id ? { ...r, isDone: true } : r));
+  }, []);
+
+
+
   return (
     <CRMContext.Provider value={{
-      currentUser, users, leads, teams, meetings, meetingRequests, leadRemarks, duplicateLeads, meetingRemarks, loginHistory, loading,
+     currentUser, users, leads, teams, meetings, meetingRequests, leadRemarks, duplicateLeads, meetingRemarks, loginHistory, followUpReminders, loading,
       login, logout, refreshData,
       addLeads, updateLead,
       addUser, updateUser, removeUser,
@@ -542,6 +593,7 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       addRemark, updateRemark, deleteRemark,
       deleteDuplicateLead, mergeDuplicateLead,
       addMeetingRemark, addLoginUpdate,
+      addFollowUpReminder, deleteFollowUpReminder, markFollowUpDone,
     }}>
       {children}
     </CRMContext.Provider>
