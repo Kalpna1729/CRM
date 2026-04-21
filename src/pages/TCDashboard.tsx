@@ -109,7 +109,8 @@ export default function TCDashboard() {
   } = useCRM();
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [theme, setTheme] = useState<Theme>('dark');
+  // const [theme, setTheme] = useState<Theme>('dark');
+   const [theme, setTheme] = useState<Theme>('light');
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
   const [forms, setForms] = useState<Record<string, ScheduleForm>>({});
