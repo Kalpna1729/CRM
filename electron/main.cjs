@@ -18,7 +18,13 @@ function createWindow() {
 
   win.loadFile(path.join(__dirname, '../dist/index.html'));
 
-  // Auto updater
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'Kalpna1729',
+    repo: 'CRM',
+    token: process.env.GH_TOKEN
+  });
+
   autoUpdater.checkForUpdates();
 
   autoUpdater.on('update-available', () => {
