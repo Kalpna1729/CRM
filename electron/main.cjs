@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
@@ -18,8 +18,34 @@ function createWindow() {
 
   win.loadFile(path.join(__dirname, '../dist/index.html'));
 
-  // Auto updater — 5 min baad check karega
-  autoUpdater.checkForUpdatesAndNotify();
+  // Auto updater
+  autoUpdater.checkForUpdates();
+
+  autoUpdater.on('update-available', () => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update Available',
+      message: 'Naya update mil gaya! Download ho raha hai...',
+      buttons: ['OK']
+    });
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox({
+      type: 'question',
+      title: 'Update Ready',
+      message: 'Update download ho gaya! Abhi install karein?',
+      buttons: ['Haan, Install Karo', 'Baad Mein']
+    }).then(result => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.log('Update error:', err);
+  });
 }
 
 app.whenReady().then(createWindow);
