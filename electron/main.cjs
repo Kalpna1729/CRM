@@ -22,7 +22,7 @@ function createWindow() {
     provider: 'github',
     owner: 'Kalpna1729',
     repo: 'CRM',
-    token: process.env.GH_TOKEN
+    token: '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'
   });
 
   autoUpdater.checkForUpdates();
