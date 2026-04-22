@@ -22,7 +22,7 @@ function createWindow() {
     provider: 'github',
     owner: 'Kalpna1729',
     repo: 'CRM',
-    token: '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'
+    token: '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'
   });
 
   autoUpdater.checkForUpdates();
@@ -36,16 +36,25 @@ function createWindow() {
     });
   });
 
-  autoUpdater.on('update-downloaded', () => {
+  // autoUpdater.on('update-downloaded', () => {
+  //   dialog.showMessageBox({
+  //     type: 'question',
+  //     title: 'Update Ready',
+  //     message: 'Update download ho gaya! Abhi install karein?',
+  //     buttons: ['Haan, Install Karo', 'Baad Mein']
+  //   }).then(result => {
+  //     if (result.response === 0) {
+  //       autoUpdater.quitAndInstall();
+  //     }
+  //   });
+  // });
+
+  autoUpdater.on('error', (err) => {
     dialog.showMessageBox({
-      type: 'question',
-      title: 'Update Ready',
-      message: 'Update download ho gaya! Abhi install karein?',
-      buttons: ['Haan, Install Karo', 'Baad Mein']
-    }).then(result => {
-      if (result.response === 0) {
-        autoUpdater.quitAndInstall();
-      }
+      type: 'error',
+      title: 'Update Error',
+      message: err.message || err.toString(),
+      buttons: ['OK']
     });
   });
 
