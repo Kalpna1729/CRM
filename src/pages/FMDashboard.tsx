@@ -1608,6 +1608,9 @@ export default function FMDashboard() {
                   <option value="TC">Team Captain</option>
                   <option value="BDM">BDM</option>
                   <option value="BDO">BDO</option>
+                  <option value="FO">FO</option>
+                  <option value="RM">RM</option>
+                  <option value="MD">MD</option>
                 </select>
               </div>
             </div>

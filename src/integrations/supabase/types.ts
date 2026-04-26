@@ -253,6 +253,15 @@ export type Database = {
           time_slot: string
           walkin_date: string | null
           walking_status: string | null
+          fo_status: string | null
+          mini_login_date: string | null
+          full_login_date: string | null
+          fo_id: string | null
+          documents_received: boolean | null
+          report_date: string | null
+          rm_id: string | null
+          case_stage: string | null
+          rm_priority: string | null
         }
         Insert: {
           bdo_id?: string | null

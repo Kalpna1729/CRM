@@ -1,4 +1,5 @@
-export type UserRole = 'FM' | 'TC' | 'BDM' | 'BO' | 'BDO';
+// export type UserRole = 'FM' | 'TC' | 'BDM' | 'BO' | 'BDO';
+export type UserRole = 'FM' | 'TC' | 'BDM' | 'BO' | 'BDO' | 'FO' | 'RM' | 'MD';
 
 export interface User {
   id: string;
@@ -15,7 +16,8 @@ export type LeadStatus = 'Mobile Off' | 'Incoming Barred' | 'Invalid Number' | '
 export type LeadType = 'Client' | 'DSA' | '';
 // export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject';
 export type MeetingStep1Status = 'Meeting Done' | 'Pending' | 'Reject' | 'Scheduled' | 'Reschedule Requested';
-export type MeetingStatus = 'Scheduled' | 'Meeting Done' | 'Pending' | 'Reject' | 'Not Done' | 'Converted' | 'Follow-Up' | 'Reschedule Requested';
+// export type MeetingStatus = 'Scheduled' | 'Meeting Done' | 'Pending' | 'Reject' | 'Not Done' | 'Converted' | 'Follow-Up' | 'Reschedule Requested';
+export type MeetingStatus = 'Scheduled' | 'Meeting Done' | 'Pending' | 'Reject' | 'Not Done' | 'Converted' | 'Follow-Up' | 'Reschedule Requested' | 'Legal Team Sent' | 'Disbursed' | 'On Hold';
 // export type MeetingStatus = 'Scheduled' | 'Meeting Done' | 'Not Done' | 'Pending' | 'Reject' | 'Converted' | 'Follow-Up' | '';
 export type BDOStatus = 'Converted by BDM' | 'Converted' | 'Walk-in Done' | 'Follow-up' | '';
 export type WalkingStatus = 'Walking Done' | 'Invalid' | '';
@@ -39,6 +41,29 @@ export interface Lead {
   priority?: 'Hot' | 'Warm' | 'Cold' | null;
   followUpDate?: string | null;
   callCount?: number;
+  // Business Details
+  email?: string;
+  contactNumber?: string;
+  entityName?: string;
+  entityType?: string;
+  natureOfBusiness?: string;
+  businessPlace?: string;
+  lastYearTurnover?: string;
+  lastYearNetProfit?: string;
+  businessVintage?: string;
+  businessDescription?: string;
+  state?: string;
+  // Loan Details
+  requirementType?: string;
+  requiredAmount?: string;
+  collateralType?: string;
+  collateralValue?: string;
+  collateralDescription?: string;
+  projectDescription?: string;
+  loanAmountStatus?: string;
+  liabilityAmount?: string;
+  bankName?: string;
+  dsaName?: string;
 }
 
 export interface LeadRemark {
@@ -82,14 +107,26 @@ export interface Meeting {
   miniLogin?: boolean;
   fullLogin?: boolean;
   walkingStatus?: WalkingStatus;
+  walkinDone?: boolean;
   // TC scheduling details
-  clientName?: string;
-  location?: string;
-  state?: string;
-  productType?: ProductType;
-  finalRequirement?: string;
-  collateralValue?: string;
+  // clientName?: string;
+  // location?: string;
+  // state?: string;
+  // productType?: ProductType;
+  // finalRequirement?: string;
+  // collateralValue?: string;
+  foStatus?: 'Valid' | 'Invalid' | '';
+  miniLoginDate?: string;
+  fullLoginDate?: string;
+  foId?: string;
+  documentsReceived?: boolean;
+  reportDate?: string;
+  rmId?: string;
+  caseStage?: 'Login' | 'Document' | 'Valuation' | 'Legal' | 'Sanction' | 'Disbursed' | 'Rejected' | '';
+  rmPriority?: 'High' | 'Medium' | 'Low' | '';
 }
+
+
 
 export interface Team {
   id: string;

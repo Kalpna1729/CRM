@@ -1,16 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// FMReport.tsx — Report Tab for FM Dashboard
-// Import and add as a tab inside FMDashboard_updated.tsx
-//
-// HOW TO INTEGRATE:
-//   1. Import at top of FMDashboard_updated.tsx:
-//        import FMReport from './FMReport';
-//   2. Add nav item:
-//        { id: 'report', label: 'Reports', icon: I.report }
-//   3. Add tab content:
-//        {activeTab === 'report' && <FMReport users={users} leads={leads} meetings={meetings} meetingRequests={meetingRequests} teams={teams} />}
-// ─────────────────────────────────────────────────────────────────────────────
-
 import React, { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 

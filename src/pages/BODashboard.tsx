@@ -107,6 +107,9 @@ export default function BODashboard() {
   // callLogs remain local (timestamps/notes) — only callCount goes to DB
   const [callLogs, setCallLogs] = useState<Record<string, { time: string; note: string }[]>>({});
   const [fuInput, setFuInput] = useState<Record<string, { date: string; remark: string }>>({});
+  const [leadFormData, setLeadFormData] = useState<Record<string, any>>({});
+  const [showLeadForm, setShowLeadForm] = useState<string | null>(null);
+  const [viewFormLead, setViewFormLead] = useState<string | null>(null);
 
   // Live clock
   useEffect(() => {
@@ -127,44 +130,6 @@ export default function BODashboard() {
   }, [currentUser]);
 
 
-
-  // useEffect(() => {
-  //   if (!currentUser) return;
-
-  //   console.log("🔥 Realtime start ho gaya");
-
-  //   const channel = supabase
-  //     .channel('leads-live')
-  //     .on(
-  //       'postgres_changes',
-  //       {
-  //         event: 'INSERT',
-  //         schema: 'public',
-  //         table: 'leads',
-
-  //         // 🔥 sirf apne leads
-  //         filter: `assigned_bo_id=eq.${currentUser.id}`
-  //       },
-  //       (payload) => {
-  //         console.log("🔥 New lead:", payload);
-
-  //         // ❌ yaha dikkat hai (tera state context me hai)
-  //         // 👉 direct setLeads nahi hai
-
-  //         // ✅ solution:
-  //         window.location.reload(); // TEMP FIX
-  //       }
-  //     )
-  //     .subscribe((status) => {
-  //       console.log("Realtime status:", status);
-  //     });
-
-  //   return () => {
-  //     supabase.removeChannel(channel);
-  //   };
-  // }, [currentUser]);
-
-
   // Data
   const today = new Date().toISOString().split('T')[0];
   const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -180,6 +145,7 @@ export default function BODashboard() {
   }, [meetings, currentUser, fromDate, toDate]);
   const myRequests = meetingRequests.filter(mr => mr.boId === currentUser?.id);
 
+ 
   // Stable order
   useEffect(() => {
     const ids = todayLeads.map(l => l.id);
@@ -214,11 +180,11 @@ export default function BODashboard() {
   // }, [followUpReminders, myLeads, today]);
 
   const followupAlerts = useMemo(() => {
-  return followUpReminders
-    .filter(r => !r.isDone && r.reminderDate <= today)
-    .map(r => ({ lead: myLeads.find(l => l.id === r.leadId)!, date: r.reminderDate, remark: r.remark }))
-    .filter(a => a.lead);
-}, [followUpReminders, myLeads, today]);
+    return followUpReminders
+      .filter(r => !r.isDone && r.reminderDate <= today)
+      .map(r => ({ lead: myLeads.find(l => l.id === r.leadId)!, date: r.reminderDate, remark: r.remark }))
+      .filter(a => a.lead);
+  }, [followUpReminders, myLeads, today]);
 
   // Overview stats
   const connected = todayLeads.filter(l => l.numberStatus === 'Connected').length;
@@ -247,15 +213,35 @@ export default function BODashboard() {
   const updateLeadType = async (leadId: string, type: LeadType) => {
     await updateLead(leadId, { leadType: type });
   };
+  // const requestMeeting = async (leadId: string) => {
+  //   const lead = leads.find(l => l.id === leadId);
+  //   if (!lead) return;
+  //   if (lead.leadStatus !== 'Interested') { toast.error('Only for Interested leads'); return; }
+  //   if (lead.meetingRequested) { toast.error('Already requested'); return; }
+  //   await updateLead(leadId, { meetingRequested: true, meetingRejected: false });
+  //   await addMeetingRequest({ id: `mr${Date.now()}`, leadId, boId: currentUser!.id, tcId: myTCId, status: 'Pending', createdAt: today });
+  //   toast.success('Meeting request sent to TC');
+  // };
+
   const requestMeeting = async (leadId: string) => {
     const lead = leads.find(l => l.id === leadId);
     if (!lead) return;
     if (lead.leadStatus !== 'Interested') { toast.error('Only for Interested leads'); return; }
     if (lead.meetingRequested) { toast.error('Already requested'); return; }
+    // Pehle form dikhao
+    setShowLeadForm(leadId);
+  };
+
+  const submitMeetingRequest = async (leadId: string) => {
+    const formData = leadFormData[leadId] || {};
+    // Save all form data
+    await updateLead(leadId, formData);
     await updateLead(leadId, { meetingRequested: true, meetingRejected: false });
     await addMeetingRequest({ id: `mr${Date.now()}`, leadId, boId: currentUser!.id, tcId: myTCId, status: 'Pending', createdAt: today });
-    toast.success('Meeting request sent to TC');
+    setShowLeadForm(null);
+    toast.success('Meeting request sent to TC ✓');
   };
+
   const handleAddRemark = async (leadId: string) => {
     const text = remarkText[leadId]?.trim();
     if (!text) { toast.error('Enter a remark'); return; }
@@ -367,11 +353,31 @@ export default function BODashboard() {
                 {Icons.send} {isLoading(`meeting_${lead.id}`) ? '...' : 'Request'}
               </button>
             )}
-            {lead.meetingRequested && (
+            {/* {lead.meetingRequested && (
               <span className={`badge ${lead.meetingApproved ? 'badge-approved' : 'badge-pending'}`}>
                 {lead.meetingApproved ? 'Approved' : 'Pending'}
               </span>
+            )} */}
+
+
+
+
+            {lead.meetingRequested && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className={`badge ${lead.meetingApproved ? 'badge-approved' : 'badge-pending'}`}>
+                  {lead.meetingApproved ? 'Approved' : 'Pending'}
+                </span>
+                <button
+                  className="cc-btn-sm cc-btn-ghost"
+                  style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '6px' }}
+                  onClick={e => { e.stopPropagation(); setViewFormLead(lead.id); }}
+                  title="View submitted form"
+                >
+                  i
+                </button>
+              </div>
             )}
+
           </td>
         </tr>
         {isExpanded && (
@@ -1249,6 +1255,382 @@ export default function BODashboard() {
           </main>
         </div>
       </div>
+
+
+      {/* Lead Detail Form Modal */}
+      {showLeadForm && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '20px',
+        }}>
+          <div style={{
+            background: isDark ? '#0d0f1a' : '#fff',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+            borderRadius: '16px', width: '100%', maxWidth: '800px',
+            maxHeight: '90vh', overflow: 'auto',
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '20px 24px', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              position: 'sticky', top: 0, background: isDark ? '#0d0f1a' : '#fff', zIndex: 1,
+            }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '16px' }}>Client Details Form</div>
+                <div style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace' }}>
+                  Fill before requesting meeting — {leads.find(l => l.id === showLeadForm)?.clientName}
+                </div>
+              </div>
+              <button onClick={() => setShowLeadForm(null)} style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: 'var(--text3)', fontSize: '20px',
+              }}>✕</button>
+            </div>
+
+            {/* Form Body */}
+            <div style={{ padding: '24px' }}>
+              {(() => {
+                const lead = leads.find(l => l.id === showLeadForm)!;
+                const fd = leadFormData[showLeadForm] || {};
+                const update = (key: string, val: string) => setLeadFormData(prev => ({
+                  ...prev, [showLeadForm]: { ...prev[showLeadForm], [key]: val }
+                }));
+
+                const inputStyle = {
+                  width: '100%', padding: '8px 12px', borderRadius: '8px',
+                  background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                  color: 'inherit', fontSize: '12px', outline: 'none', fontFamily: 'inherit',
+                  boxSizing: 'border-box' as const,
+                };
+
+                const labelStyle = {
+                  fontSize: '10px', fontWeight: 600, color: 'var(--text3)',
+                  textTransform: 'uppercase' as const, letterSpacing: '1px',
+                  fontFamily: 'monospace', marginBottom: '4px', display: 'block',
+                };
+
+                const sectionStyle = {
+                  fontSize: '11px', fontWeight: 700, color: 'var(--accent)',
+                  fontFamily: 'monospace', letterSpacing: '2px', textTransform: 'uppercase' as const,
+                  marginBottom: '12px', marginTop: '4px',
+                  paddingBottom: '6px', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                };
+
+                const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' };
+                const grid3 = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' };
+
+                return (
+                  <>
+                    {/* Basic Info */}
+                    <div style={sectionStyle}>Basic Information</div>
+                    <div style={grid2}>
+                      <div>
+                        <label style={labelStyle}>Client Name *</label>
+                        <input style={inputStyle} value={fd.clientName ?? lead.clientName} onChange={e => update('clientName', e.target.value)} placeholder="Full name" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Contact Number</label>
+                        <input style={inputStyle} value={fd.contactNumber ?? lead.contactNumber ?? ''} onChange={e => update('contactNumber', e.target.value)} placeholder="Phone number" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Email</label>
+                        <input style={inputStyle} value={fd.email ?? lead.email ?? ''} onChange={e => update('email', e.target.value)} placeholder="email@example.com" />
+                      </div>
+                      {/* <div>
+                        <label style={labelStyle}>State</label>
+                        <input style={inputStyle} value={fd.state ?? lead.state ?? ''} onChange={e => update('state', e.target.value)} placeholder="State" />
+                      </div> */}
+                      <div>
+                        <label style={labelStyle}>State</label>
+                        <select style={inputStyle} value={fd.state ?? lead.state ?? ''} onChange={e => update('state', e.target.value)}>
+                          <option value="">Select type</option>
+                          {['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+                          ].map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={labelStyle}>Address</label>
+                      <textarea style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }} value={fd.address ?? lead.address ?? ''} onChange={e => update('address', e.target.value)} placeholder="Full address" />
+                    </div>
+
+                    {/* Business Info */}
+                    <div style={sectionStyle}>Business Information</div>
+                    <div style={grid2}>
+                      <div>
+                        <label style={labelStyle}>Entity Name</label>
+                        <input style={inputStyle} value={fd.entityName ?? lead.entityName ?? ''} onChange={e => update('entityName', e.target.value)} placeholder="Business/Company name" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Entity Type</label>
+                        <select style={inputStyle} value={fd.entityType ?? lead.entityType ?? ''} onChange={e => update('entityType', e.target.value)}>
+                          <option value="">Select type</option>
+                          {['Proprietorship', 'Partnership', 'Pvt Ltd', 'Ltd', 'LLP', 'Trust', 'NGO', 'Other'].map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Nature of Business</label>
+                        <input style={inputStyle} value={fd.natureOfBusiness ?? lead.natureOfBusiness ?? ''} onChange={e => update('natureOfBusiness', e.target.value)} placeholder="e.g. Manufacturing, Trading" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Business Place</label>
+                        <input style={inputStyle} value={fd.businessPlace ?? lead.businessPlace ?? ''} onChange={e => update('businessPlace', e.target.value)} placeholder="Business location" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Business Vintage</label>
+                        <input style={inputStyle} value={fd.businessVintage ?? lead.businessVintage ?? ''} onChange={e => update('businessVintage', e.target.value)} placeholder="e.g. 5 years" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>DSA Name</label>
+                        <input style={inputStyle} value={fd.dsaName ?? lead.dsaName ?? ''} onChange={e => update('dsaName', e.target.value)} placeholder="DSA name if any" />
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={labelStyle}>Business Description</label>
+                      <textarea style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }} value={fd.businessDescription ?? lead.businessDescription ?? ''} onChange={e => update('businessDescription', e.target.value)} placeholder="Brief description of business" />
+                    </div>
+
+                    {/* Financial Info */}
+                    <div style={sectionStyle}>Financial Information</div>
+                    <div style={grid3}>
+                      <div>
+                        <label style={labelStyle}>Last Year Turnover</label>
+                        <input style={inputStyle} value={fd.lastYearTurnover ?? lead.lastYearTurnover ?? ''} onChange={e => update('lastYearTurnover', e.target.value)} placeholder="e.g. 50 Lakhs" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Last Year Net Profit</label>
+                        <input style={inputStyle} value={fd.lastYearNetProfit ?? lead.lastYearNetProfit ?? ''} onChange={e => update('lastYearNetProfit', e.target.value)} placeholder="e.g. 10 Lakhs" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Liability Amount</label>
+                        <input style={inputStyle} value={fd.liabilityAmount ?? lead.liabilityAmount ?? ''} onChange={e => update('liabilityAmount', e.target.value)} placeholder="Existing loans" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Bank Name</label>
+                        <input style={inputStyle} value={fd.bankName ?? lead.bankName ?? ''} onChange={e => update('bankName', e.target.value)} placeholder="Current bank" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Loan Amount Status</label>
+                        <input style={inputStyle} value={fd.loanAmountStatus ?? lead.loanAmountStatus ?? ''} onChange={e => update('loanAmountStatus', e.target.value)} placeholder="e.g. Active, Closed" />
+                      </div>
+                    </div>
+
+                    {/* Loan Requirement */}
+                    <div style={sectionStyle}>Loan Requirement</div>
+                    <div style={grid2}>
+                      <div>
+                        <label style={labelStyle}>Requirement Type</label>
+                        <select style={inputStyle} value={fd.requirementType ?? lead.requirementType ?? ''} onChange={e => update('requirementType', e.target.value)}>
+                          <option value="">Select type</option>
+                          {['Term Loan', 'Equity', 'Term+Equity', 'Unsecured', 'Project Funding'].map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Required Amount</label>
+                        <input style={inputStyle} value={fd.requiredAmount ?? lead.requiredAmount ?? ''} onChange={e => update('requiredAmount', e.target.value)} placeholder="e.g. 1 Crore" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Collateral Type</label>
+                        <input style={inputStyle} value={fd.collateralType ?? lead.collateralType ?? ''} onChange={e => update('collateralType', e.target.value)} placeholder="e.g. Property, FD" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Collateral Value</label>
+                        <input style={inputStyle} value={fd.collateralValue ?? lead.collateralValue ?? ''} onChange={e => update('collateralValue', e.target.value)} placeholder="Market value" />
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={labelStyle}>Collateral Description</label>
+                      <textarea style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }} value={fd.collateralDescription ?? lead.collateralDescription ?? ''} onChange={e => update('collateralDescription', e.target.value)} placeholder="Describe collateral" />
+                    </div>
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={labelStyle}>Project Description</label>
+                      <textarea style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }} value={fd.projectDescription ?? lead.projectDescription ?? ''} onChange={e => update('projectDescription', e.target.value)} placeholder="Project details if any" />
+                    </div>
+
+                    {/* Submit */}
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
+                      <button onClick={() => setShowLeadForm(null)} style={{
+                        padding: '10px 20px', borderRadius: '8px', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                        background: 'transparent', color: 'var(--text2)', cursor: 'pointer', fontSize: '13px',
+                      }}>Cancel</button>
+                      <button onClick={() => submitMeetingRequest(showLeadForm!)} style={{
+                        padding: '10px 24px', borderRadius: '8px', border: 'none',
+                        background: 'var(--accent)', color: '#1a0202', cursor: 'pointer',
+                        fontSize: '13px', fontWeight: 600,
+                      }}>Send Meeting Request →</button>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      {/* View Form Modal */}
+      {viewFormLead && (() => {
+        const lead = leads.find(l => l.id === viewFormLead)!;
+        const fd = leadFormData[viewFormLead] || {};
+        const val = (key: string) => fd[key] ?? (lead as any)[key] ?? '—';
+
+        const rowStyle = {
+          display: 'grid', gridTemplateColumns: '1fr 1fr',
+          gap: '12px', marginBottom: '14px'
+        };
+        const fieldStyle = {
+          background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+          borderRadius: '8px', padding: '10px 12px',
+        };
+        const labelStyle: React.CSSProperties = {
+          fontSize: '9px', fontWeight: 600, color: 'var(--text3)',
+          textTransform: 'uppercase', letterSpacing: '1px',
+          fontFamily: 'monospace', marginBottom: '4px', display: 'block',
+        };
+        const valStyle = { fontSize: '13px', color: 'var(--text)', fontWeight: 500 };
+        const sectionStyle: React.CSSProperties = {
+          fontSize: '11px', fontWeight: 700, color: 'var(--accent)',
+          fontFamily: 'monospace', letterSpacing: '2px', textTransform: 'uppercase',
+          marginBottom: '12px', marginTop: '8px',
+          paddingBottom: '6px',
+          borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+        };
+
+        const Field = ({ label, k }: { label: string; k: string }) => (
+          <div style={fieldStyle}>
+            <label style={labelStyle}>{label}</label>
+            <div style={valStyle}>{val(k)}</div>
+          </div>
+        );
+
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1001, padding: '20px',
+          }}>
+            <div id="form-print-area" style={{
+              background: isDark ? '#0d0f1a' : '#fff',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+              borderRadius: '16px', width: '100%', maxWidth: '820px',
+              maxHeight: '90vh', overflow: 'auto',
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: '18px 24px',
+                borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                position: 'sticky', top: 0,
+                background: isDark ? '#0d0f1a' : '#fff', zIndex: 1,
+              }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '16px' }}>Submitted Client Form</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace' }}>
+                    {lead.clientName} · Meeting {lead.meetingApproved ? 'Approved ✓' : 'Pending'}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="cc-btn-sm cc-btn-ghost"
+                    onClick={() => {
+                      const printContents = document.getElementById('form-print-area')!.innerHTML;
+                      const win = window.open('', '_blank')!;
+                      win.document.write(`
+                  <html><head><title>Client Form - ${lead.clientName}</title>
+                  <style>
+                    body { font-family: Inter, sans-serif; padding: 24px; color: #111; }
+                    .label { font-size: 9px; font-weight: 600; text-transform: uppercase;
+                      letter-spacing: 1px; color: #666; margin-bottom: 4px; display: block; }
+                    .field { background: #f5f5f5; border: 1px solid #e0e0e0;
+                      border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+                    .val { font-size: 13px; font-weight: 500; }
+                    .section { font-size: 11px; font-weight: 700; color: #2563eb;
+                      letter-spacing: 2px; text-transform: uppercase;
+                      border-bottom: 1px solid #e0e0e0;
+                      padding-bottom: 6px; margin: 16px 0 12px; }
+                    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+                    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+                    button { display: none !important; }
+                  </style></head><body>${printContents}</body></html>
+                `);
+                      win.document.close();
+                      win.focus();
+                      win.print();
+                      win.close();
+                    }}
+                  >
+                    🖨 Print
+                  </button>
+                  <button
+                    className="cc-btn-sm cc-btn-ghost"
+                    onClick={() => setViewFormLead(null)}
+                  >✕ Close</button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div style={{ padding: '24px' }}>
+                <div style={sectionStyle}>Basic Information</div>
+                <div style={rowStyle}>
+                  <Field label="Client Name" k="clientName" />
+                  <Field label="Contact Number" k="contactNumber" />
+                  <Field label="Email" k="email" />
+                  <Field label="State" k="state" />
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Address</label>
+                  <div style={valStyle}>{val('address')}</div>
+                </div>
+
+                <div style={sectionStyle}>Business Information</div>
+                <div style={rowStyle}>
+                  <Field label="Entity Name" k="entityName" />
+                  <Field label="Entity Type" k="entityType" />
+                  <Field label="Nature of Business" k="natureOfBusiness" />
+                  <Field label="Business Place" k="businessPlace" />
+                  <Field label="Business Vintage" k="businessVintage" />
+                  <Field label="DSA Name" k="dsaName" />
+                </div>
+                <div style={{ ...fieldStyle, marginBottom: '14px' }}>
+                  <label style={labelStyle}>Business Description</label>
+                  <div style={valStyle}>{val('businessDescription')}</div>
+                </div>
+
+                <div style={sectionStyle}>Financial Information</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                  <Field label="Last Year Turnover" k="lastYearTurnover" />
+                  <Field label="Last Year Net Profit" k="lastYearNetProfit" />
+                  <Field label="Liability Amount" k="liabilityAmount" />
+                  <Field label="Bank Name" k="bankName" />
+                  <Field label="Loan Amount Status" k="loanAmountStatus" />
+                </div>
+
+                <div style={sectionStyle}>Loan Requirement</div>
+                <div style={rowStyle}>
+                  <Field label="Requirement Type" k="requirementType" />
+                  <Field label="Required Amount" k="requiredAmount" />
+                  <Field label="Collateral Type" k="collateralType" />
+                  <Field label="Collateral Value" k="collateralValue" />
+                </div>
+                <div style={{ ...fieldStyle, marginBottom: '14px' }}>
+                  <label style={labelStyle}>Collateral Description</label>
+                  <div style={valStyle}>{val('collateralDescription')}</div>
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Project Description</label>
+                  <div style={valStyle}>{val('projectDescription')}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+
 
       <DoubleConfirmModal
         isOpen={!!remarkToDelete}

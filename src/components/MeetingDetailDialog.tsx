@@ -197,7 +197,7 @@ export default function MeetingDetailDialog({
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-card border border-border/60 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><IndianRupee className="w-4 h-4 text-primary/80"/> Required Amount</p>
-              <p className="text-2xl font-bold text-primary">₹{lead?.loanRequirement || '—'}</p>
+              <p className="text-2xl font-bold text-primary">₹{lead?.requiredAmount || '—'}</p>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5"><Briefcase className="w-4 h-4 text-primary/80"/> Product Type</p>

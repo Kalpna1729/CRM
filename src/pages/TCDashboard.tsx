@@ -8,13 +8,13 @@ import { connected } from 'process';
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ScheduleForm = {
   bdm: string; slot: string; meetingType: 'Virtual' | 'Walk-in';
-  clientName: string; location: string; state: string;
-  productType: ProductType; finalReq: string; collateral: string;
+  // clientName: string; location: string; state: string;
+  // productType: ProductType; finalReq: string; collateral: string;
 };
 const defaultForm = (): ScheduleForm => ({
   bdm: '', slot: '', meetingType: 'Virtual',
-  clientName: '', location: '', state: '',
-  productType: '', finalReq: '', collateral: '',
+  // clientName: '', location: '', state: '',
+  // productType: '', finalReq: '', collateral: '',
 });
 
 type Tab = 'overview' | 'team' | 'requests' | 'schedule' | 'history';
@@ -110,13 +110,14 @@ export default function TCDashboard() {
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   // const [theme, setTheme] = useState<Theme>('dark');
-   const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>('light');
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
   const [forms, setForms] = useState<Record<string, ScheduleForm>>({});
   const [selectedBOId, setSelectedBOId] = useState<string | null>(null);
   const [clock, setClock] = useState('');
   const [detailModal, setDetailModal] = useState<{ type: string; title: string; data: any } | null>(null);
+  const [viewFormLeadId, setViewFormLeadId] = useState<string | null>(null);
 
   // Live clock
   useEffect(() => {
@@ -209,9 +210,9 @@ export default function TCDashboard() {
     await addMeeting({
       id: meetingId, leadId, bdmId: f.bdm, tcId: currentUser!.id, boId,
       date: today, timeSlot: f.slot, status: 'Scheduled', meetingType: f.meetingType,
-      clientName: f.clientName || undefined, location: f.location || undefined,
-      state: f.state || undefined, productType: f.productType || undefined,
-      finalRequirement: f.finalReq || undefined, collateralValue: f.collateral || undefined,
+      // clientName: f.clientName || undefined, location: f.location || undefined,
+      // state: f.state || undefined, productType: f.productType || undefined,
+      // finalRequirement: f.finalReq || undefined, collateralValue: f.collateral || undefined,
     });
     // Clear meetingRequested so the "Request" button never reappears after refresh
     await updateLead(leadId, {
@@ -227,11 +228,12 @@ export default function TCDashboard() {
     if (!f.bdm || !f.slot) { toast.error('Select BDM and time slot'); return; }
     await updateMeeting(meetingId, {
       status: 'Scheduled', bdmId: f.bdm, date: today, timeSlot: f.slot,
-      meetingType: f.meetingType, clientName: f.clientName || undefined,
-      location: f.location || undefined, state: f.state || undefined,
-      productType: f.productType || undefined,
-      finalRequirement: f.finalReq || undefined,
-      collateralValue: f.collateral || undefined,
+      meetingType: f.meetingType,
+      //  clientName: f.clientName || undefined,
+      // location: f.location || undefined, state: f.state || undefined,
+      // productType: f.productType || undefined,
+      // finalRequirement: f.finalReq || undefined,
+      // collateralValue: f.collateral || undefined,
     });
     resetForm(meetingId);
     toast.success('Meeting rescheduled successfully');
@@ -268,44 +270,10 @@ export default function TCDashboard() {
             <div className="field-label">MEETING TYPE</div>
             <select className="cc-select" value={f.meetingType} onChange={e => setFormField(id, 'meetingType', e.target.value)}>
               <option value="Virtual">Virtual</option>
-              <option value="Walk-in">Walk-in</option>
+              {/* <option value="Walk-in">Walk-in</option> */}
             </select>
           </div>
-          <div className="sched-field">
-            <div className="field-label">CLIENT NAME</div>
-            <input className="cc-input" placeholder="Enter client name" value={f.clientName} onChange={e => setFormField(id, 'clientName', e.target.value)} />
-          </div>
-          <div className="sched-field">
-            <div className="field-label">LOCATION</div>
-            <input className="cc-input" placeholder="Enter location" value={f.location} onChange={e => setFormField(id, 'location', e.target.value)} />
-          </div>
-          <div className="sched-field">
-            <div className="field-label">STATE</div>
-            {/* <input className="cc-input" placeholder="Enter state" value={f.state} onChange={e => setFormField(id, 'state', e.target.value)} /> */}
-            <select className="cc-select" value={f.state} onChange={e => setFormField(id, 'state', e.target.value)}>
-              <option value="">STATE</option>
-              {['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'].map(p => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-          <div className="sched-field">
-            <div className="field-label">PRODUCT TYPE</div>
-            <select className="cc-select" value={f.productType} onChange={e => setFormField(id, 'productType', e.target.value)}>
-              <option value="">Select product</option>
-              {['Term Loan', 'Equity', 'Term+Equity', 'Unsecure', 'Project Funding'].map(p => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-          <div className="sched-field">
-            <div className="field-label">FINAL REQ. (₹)</div>
-            <input className="cc-input" placeholder="e.g. 10-15 Lakhs" value={f.finalReq} onChange={e => setFormField(id, 'finalReq', e.target.value)} />
-          </div>
-          <div className="sched-field">
-            <div className="field-label">COLLATERAL (₹)</div>
-            <input className="cc-input" placeholder="e.g. 1-2 Cr" value={f.collateral} onChange={e => setFormField(id, 'collateral', e.target.value)} />
-          </div>
+
         </div>
         <button className={`cc-btn ${isReschedule ? 'cc-btn-orange' : 'cc-btn-blue'}`} onClick={onSubmit}>
           {isReschedule ? Icons.refresh : Icons.calendar}
@@ -1455,7 +1423,7 @@ export default function TCDashboard() {
                         const boLeads = leads.filter(l => l.assignedBOId === boId);
                         const boMeetings = meetings.filter(m => m.boId === boId);
                         const converted = boMeetings.filter(m => m.status === 'Converted').length;
-                        const convRate = boMeetings.length ? Math.round( converted/boMeetings.length * 100) : 0;
+                        const convRate = boMeetings.length ? Math.round(converted / boMeetings.length * 100) : 0;
                         return (
                           <tr key={boId} style={{ cursor: 'pointer' }} onClick={() => { setSelectedBOId(boId); }}>
                             <td className="primary">
@@ -1710,7 +1678,7 @@ export default function TCDashboard() {
                             <td>{bo?.name}</td>
                             <td>{statusBadge(lead?.leadStatus || 'Pending')}</td>
                             <td>{statusBadge(req.status)}</td>
-                            <td onClick={e => e.stopPropagation()}>
+                            {/* <td onClick={e => e.stopPropagation()}>
                               {req.status === 'Pending' && (
                                 <div style={{ display: 'flex', gap: '6px' }}>
                                   <button className="action-btn btn-approve" onClick={() => approveRequest(req.id)}>{Icons.check} Approve</button>
@@ -1718,6 +1686,30 @@ export default function TCDashboard() {
                                 </div>
                               )}
                               {req.status !== 'Pending' && <span style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>—</span>}
+                            </td> */}
+
+                            <td onClick={e => e.stopPropagation()}>
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                {/* ⓘ button — hamesha dikhega */}
+                                <button
+                                  className="action-btn"
+                                  style={{ background: 'rgba(61,127,255,0.1)', color: 'var(--accent)', borderColor: 'rgba(61,127,255,0.2)' }}
+                                  onClick={() => setViewFormLeadId(req.leadId)}
+                                  title="View client form"
+                                >
+                                  ⓘ Details
+                                </button>
+
+                                {req.status === 'Pending' && (
+                                  <>
+                                    <button className="action-btn btn-approve" onClick={() => approveRequest(req.id)}>{Icons.check} Approve</button>
+                                    <button className="action-btn btn-reject" onClick={() => rejectRequest(req.id)}>{Icons.x} Reject</button>
+                                  </>
+                                )}
+                                {req.status !== 'Pending' && (
+                                  <span style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>—</span>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -1897,6 +1889,165 @@ export default function TCDashboard() {
           </main>
         </div>
       </div>
+
+
+
+      {/* Client Form View Modal */}
+      {viewFormLeadId && (() => {
+        const lead = leads.find(l => l.id === viewFormLeadId);
+        if (!lead) return null;
+        const val = (key: string) => (lead as any)[key] || '—';
+
+        const fieldStyle = {
+          background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+          borderRadius: '8px', padding: '10px 12px',
+        };
+        const labelStyle: React.CSSProperties = {
+          fontSize: '9px', fontWeight: 600, color: 'var(--text3)',
+          textTransform: 'uppercase', letterSpacing: '1px',
+          fontFamily: 'monospace', marginBottom: '4px', display: 'block',
+        };
+        const valStyle = { fontSize: '13px', color: 'var(--text)', fontWeight: 500 };
+        const sectionStyle: React.CSSProperties = {
+          fontSize: '11px', fontWeight: 700, color: 'var(--accent)',
+          fontFamily: 'monospace', letterSpacing: '2px', textTransform: 'uppercase',
+          marginBottom: '12px', marginTop: '8px',
+          paddingBottom: '6px',
+          borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+        };
+        const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' };
+        const grid3 = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' };
+
+        const Field = ({ label, k }: { label: string; k: string }) => (
+          <div style={fieldStyle}>
+            <label style={labelStyle}>{label}</label>
+            <div style={valStyle}>{val(k)}</div>
+          </div>
+        );
+
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1002, padding: '20px',
+          }}>
+            <div id="tc-form-print-area" style={{
+              background: isDark ? '#0d0f1a' : '#fff',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+              borderRadius: '16px', width: '100%', maxWidth: '820px',
+              maxHeight: '90vh', overflow: 'auto',
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: '18px 24px',
+                borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                position: 'sticky', top: 0,
+                background: isDark ? '#0d0f1a' : '#fff', zIndex: 1,
+              }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '16px' }}>Client Detail Form</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace' }}>
+                    {lead.clientName} · ₹{lead.loanRequirement}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="action-btn"
+                    style={{ background: 'rgba(61,127,255,0.1)', color: 'var(--accent)', borderColor: 'rgba(61,127,255,0.2)' }}
+                    onClick={() => {
+                      const printContents = document.getElementById('tc-form-print-area')!.innerHTML;
+                      const win = window.open('', '_blank')!;
+                      win.document.write(`
+                  <html><head><title>Client Form - ${lead.clientName}</title>
+                  <style>
+                    body { font-family: Inter, sans-serif; padding: 24px; color: #111; }
+                    label { font-size: 9px; font-weight: 600; text-transform: uppercase;
+                      letter-spacing: 1px; color: #666; margin-bottom: 4px; display: block; }
+                    .field { background: #f5f5f5; border: 1px solid #e0e0e0;
+                      border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+                    .val { font-size: 13px; font-weight: 500; }
+                    .section { font-size: 11px; font-weight: 700; color: #2563eb;
+                      letter-spacing: 2px; text-transform: uppercase;
+                      border-bottom: 1px solid #e0e0e0;
+                      padding-bottom: 6px; margin: 16px 0 12px; }
+                    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+                    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+                    button { display: none !important; }
+                  </style></head><body>${printContents}</body></html>
+                `);
+                      win.document.close();
+                      win.focus(); win.print(); win.close();
+                    }}
+                  >
+                    🖨 Print
+                  </button>
+                  <button
+                    className="action-btn"
+                    style={{ background: 'rgba(255,71,87,0.1)', color: 'var(--danger)', borderColor: 'rgba(255,71,87,0.2)' }}
+                    onClick={() => setViewFormLeadId(null)}
+                  >✕ Close</button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div style={{ padding: '24px' }}>
+                <div style={sectionStyle}>Basic Information</div>
+                <div style={grid2}>
+                  <Field label="Client Name" k="clientName" />
+                  <Field label="Contact Number" k="contactNumber" />
+                  <Field label="Email" k="email" />
+                  <Field label="State" k="state" />
+                </div>
+                <div style={{ ...fieldStyle, marginBottom: '14px' }}>
+                  <label style={labelStyle}>Address</label>
+                  <div style={valStyle}>{val('address')}</div>
+                </div>
+
+                <div style={sectionStyle}>Business Information</div>
+                <div style={grid2}>
+                  <Field label="Entity Name" k="entityName" />
+                  <Field label="Entity Type" k="entityType" />
+                  <Field label="Nature of Business" k="natureOfBusiness" />
+                  <Field label="Business Place" k="businessPlace" />
+                  <Field label="Business Vintage" k="businessVintage" />
+                  <Field label="DSA Name" k="dsaName" />
+                </div>
+                <div style={{ ...fieldStyle, marginBottom: '14px' }}>
+                  <label style={labelStyle}>Business Description</label>
+                  <div style={valStyle}>{val('businessDescription')}</div>
+                </div>
+
+                <div style={sectionStyle}>Financial Information</div>
+                <div style={grid3}>
+                  <Field label="Last Year Turnover" k="lastYearTurnover" />
+                  <Field label="Last Year Net Profit" k="lastYearNetProfit" />
+                  <Field label="Liability Amount" k="liabilityAmount" />
+                  <Field label="Bank Name" k="bankName" />
+                  <Field label="Loan Amount Status" k="loanAmountStatus" />
+                </div>
+
+                <div style={sectionStyle}>Loan Requirement</div>
+                <div style={grid2}>
+                  <Field label="Requirement Type" k="requirementType" />
+                  <Field label="Required Amount" k="requiredAmount" />
+                  <Field label="Collateral Type" k="collateralType" />
+                  <Field label="Collateral Value" k="collateralValue" />
+                </div>
+                <div style={{ ...fieldStyle, marginBottom: '14px' }}>
+                  <label style={labelStyle}>Collateral Description</label>
+                  <div style={valStyle}>{val('collateralDescription')}</div>
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Project Description</label>
+                  <div style={valStyle}>{val('projectDescription')}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {renderDetailModal()}
     </>
   );

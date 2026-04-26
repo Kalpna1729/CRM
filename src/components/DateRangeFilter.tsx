@@ -11,7 +11,7 @@ interface DateRangeFilterProps {
   toDate: Date | undefined;
   onFromChange: (d: Date | undefined) => void;
   onToChange: (d: Date | undefined) => void;
-  onClear?: () => void;
+  onClear?: () => void; 
 }
 
 export default function DateRangeFilter({ fromDate, toDate, onFromChange, onToChange, onClear }: DateRangeFilterProps) {

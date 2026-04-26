@@ -60,6 +60,27 @@ const mapLead = (l: any): Lead => ({
   priority: l.priority ?? undefined,
   followUpDate: l.follow_up_date ?? undefined,
   callCount: l.call_count ?? 0,
+  email: l.email || undefined,
+  contactNumber: l.contact_number || undefined,
+  entityName: l.entity_name || undefined,
+  entityType: l.entity_type || undefined,
+  natureOfBusiness: l.nature_of_business || undefined,
+  businessPlace: l.business_place || undefined,
+  lastYearTurnover: l.last_year_turnover || undefined,
+  lastYearNetProfit: l.last_year_net_profit || undefined,
+  businessVintage: l.business_vintage || undefined,
+  businessDescription: l.business_description || undefined,
+  state: l.state || undefined,
+  requirementType: l.requirement_type || undefined,
+  requiredAmount: l.required_amount || undefined,
+  collateralType: l.collateral_type || undefined,
+  collateralValue: l.collateral_value || undefined,
+  collateralDescription: l.collateral_description || undefined,
+  projectDescription: l.project_description || undefined,
+  loanAmountStatus: l.loan_amount_status || undefined,
+  liabilityAmount: l.liability_amount || undefined,
+  bankName: l.bank_name || undefined,
+  dsaName: l.dsa_name || undefined,
 });
 
 const mapMeeting = (m: any): Meeting => ({
@@ -72,12 +93,21 @@ const mapMeeting = (m: any): Meeting => ({
   miniLogin: m.mini_login || false,
   fullLogin: m.full_login || false,
   walkingStatus: m.walking_status || undefined,
-  clientName: m.client_name || undefined,
-  location: m.location || undefined,
-  state: m.state || undefined,
-  productType: m.product_type || undefined,
-  finalRequirement: m.final_requirement != null ? String(m.final_requirement) : undefined,
-  collateralValue: m.collateral_value != null ? String(m.collateral_value) : undefined,
+  // clientName: m.client_name || undefined,
+  // location: m.location || undefined,
+  // state: m.state || undefined,
+  // productType: m.product_type || undefined,
+  // finalRequirement: m.final_requirement != null ? String(m.final_requirement) : undefined,
+  // collateralValue: m.collateral_value != null ? String(m.collateral_value) : undefined,
+  foStatus: m.fo_status || undefined,
+  miniLoginDate: m.mini_login_date || undefined,
+  fullLoginDate: m.full_login_date || undefined,
+  foId: m.fo_id || undefined,
+  documentsReceived: m.documents_received || false,
+  reportDate: m.report_date || undefined,
+  rmId: m.rm_id || undefined,
+  caseStage: m.case_stage || undefined,
+  rmPriority: m.rm_priority || undefined,
 });
 
 const mapMeetingRequest = (r: any): MeetingRequest => ({
@@ -356,6 +386,27 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     // circulate lead among BOs by setting assigned_bo_id to null for 10 seconds before updating to new BO, so that realtime events can trigger properly for all clients
     if (updates.assignedDate !== undefined) dbUpdates.assigned_date = updates.assignedDate;
     if (updates.callCount !== undefined) dbUpdates.call_count = updates.callCount;
+    if (updates.email !== undefined) dbUpdates.email = updates.email;
+    if (updates.contactNumber !== undefined) dbUpdates.contact_number = updates.contactNumber;
+    if (updates.entityName !== undefined) dbUpdates.entity_name = updates.entityName;
+    if (updates.entityType !== undefined) dbUpdates.entity_type = updates.entityType;
+    if (updates.natureOfBusiness !== undefined) dbUpdates.nature_of_business = updates.natureOfBusiness;
+    if (updates.businessPlace !== undefined) dbUpdates.business_place = updates.businessPlace;
+    if (updates.lastYearTurnover !== undefined) dbUpdates.last_year_turnover = updates.lastYearTurnover;
+    if (updates.lastYearNetProfit !== undefined) dbUpdates.last_year_net_profit = updates.lastYearNetProfit;
+    if (updates.businessVintage !== undefined) dbUpdates.business_vintage = updates.businessVintage;
+    if (updates.businessDescription !== undefined) dbUpdates.business_description = updates.businessDescription;
+    if (updates.state !== undefined) dbUpdates.state = updates.state;
+    if (updates.requirementType !== undefined) dbUpdates.requirement_type = updates.requirementType;
+    if (updates.requiredAmount !== undefined) dbUpdates.required_amount = updates.requiredAmount;
+    if (updates.collateralType !== undefined) dbUpdates.collateral_type = updates.collateralType;
+    if (updates.collateralValue !== undefined) dbUpdates.collateral_value = updates.collateralValue;
+    if (updates.collateralDescription !== undefined) dbUpdates.collateral_description = updates.collateralDescription;
+    if (updates.projectDescription !== undefined) dbUpdates.project_description = updates.projectDescription;
+    if (updates.loanAmountStatus !== undefined) dbUpdates.loan_amount_status = updates.loanAmountStatus;
+    if (updates.liabilityAmount !== undefined) dbUpdates.liability_amount = updates.liabilityAmount;
+    if (updates.bankName !== undefined) dbUpdates.bank_name = updates.bankName;
+    if (updates.dsaName !== undefined) dbUpdates.dsa_name = updates.dsaName;
     await supabase.from('leads').update(dbUpdates).eq('id', leadId);
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, ...updates } : l));
   }, []);
@@ -448,12 +499,12 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
       time_slot: meeting.timeSlot, status: meeting.status,
       meeting_type: meeting.meetingType || null,
       walkin_date: meeting.walkinDate || null,
-      client_name: meeting.clientName || null,
-      location: meeting.location || null,
-      state: meeting.state || null,
-      product_type: meeting.productType || null,
-      final_requirement: meeting.finalRequirement ?? null,
-      collateral_value: meeting.collateralValue ?? null,
+      // client_name: meeting.clientName || null,
+      // location: meeting.location || null,
+      // state: meeting.state || null,
+      // product_type: meeting.productType || null,
+      // final_requirement: meeting.finalRequirement ?? null,
+      // collateral_value: meeting.collateralValue ?? null,
     });
     // Realtime INSERT event handles state update — no manual set needed.
   }, []);
@@ -471,12 +522,21 @@ export function CRMProvider({ children }: { children: React.ReactNode }) {
     if (updates.miniLogin !== undefined) dbUpdates.mini_login = updates.miniLogin;
     if (updates.fullLogin !== undefined) dbUpdates.full_login = updates.fullLogin;
     if (updates.walkingStatus !== undefined) dbUpdates.walking_status = updates.walkingStatus;
-    if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
-    if (updates.location !== undefined) dbUpdates.location = updates.location;
-    if (updates.state !== undefined) dbUpdates.state = updates.state;
-    if (updates.productType !== undefined) dbUpdates.product_type = updates.productType;
-    if (updates.finalRequirement !== undefined) dbUpdates.final_requirement = updates.finalRequirement;
-    if (updates.collateralValue !== undefined) dbUpdates.collateral_value = updates.collateralValue;
+    // if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
+    // if (updates.location !== undefined) dbUpdates.location = updates.location;
+    // if (updates.state !== undefined) dbUpdates.state = updates.state;
+    // if (updates.productType !== undefined) dbUpdates.product_type = updates.productType;
+    // if (updates.finalRequirement !== undefined) dbUpdates.final_requirement = updates.finalRequirement;
+    // if (updates.collateralValue !== undefined) dbUpdates.collateral_value = updates.collateralValue;
+    if (updates.foStatus !== undefined) dbUpdates.fo_status = updates.foStatus;
+    if (updates.miniLoginDate !== undefined) dbUpdates.mini_login_date = updates.miniLoginDate;
+    if (updates.fullLoginDate !== undefined) dbUpdates.full_login_date = updates.fullLoginDate;
+    if (updates.foId !== undefined) dbUpdates.fo_id = updates.foId;
+    if (updates.documentsReceived !== undefined) dbUpdates.documents_received = updates.documentsReceived;
+    if (updates.reportDate !== undefined) dbUpdates.report_date = updates.reportDate;
+    if (updates.rmId !== undefined) dbUpdates.rm_id = updates.rmId;
+    if (updates.caseStage !== undefined) dbUpdates.case_stage = updates.caseStage;
+    if (updates.rmPriority !== undefined) dbUpdates.rm_priority = updates.rmPriority;
     await supabase.from('meetings').update(dbUpdates).eq('id', meetingId);
     setMeetings(prev => prev.map(m => m.id === meetingId ? { ...m, ...updates } : m));
   }, []);

@@ -13,19 +13,19 @@ type Theme = 'dark' | 'light';
 
 // ─── Inline SVG Icons ─────────────────────────────────────────────────────────
 const Icons = {
-  dashboard: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-  meetings: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
-  pending: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  back: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>,
-  check: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
-  x: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  refresh: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>,
-  user: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-  bell: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
+  dashboard: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
+  meetings: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>,
+  pending: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
+  back: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>,
+  check: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>,
+  x: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+  refresh: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" /></svg>,
+  user: <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
+  bell: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>,
   // eye: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-  sun: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>,
-  moon: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>,
-  logout: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  sun: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>,
+  moon: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>,
+  logout: <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>,
 };
 
 // ─── Status Badge renderer ────────────────────────────────────────────────────
@@ -64,10 +64,11 @@ export default function BDMDashboard() {
   const [toDate, setToDate] = useState('');
   const [pendingAssignMeeting, setPendingAssignMeeting] = useState<Meeting | null>(null);
   const [selectedBdoId, setSelectedBdoId] = useState('');
-  const [infoMeeting, setInfoMeeting] = useState<Meeting | null>(null);
+  // const [infoMeeting, setInfoMeeting] = useState<Meeting | null>(null);
+  const [viewFormLeadId, setViewFormLeadId] = useState<string | null>(null);
 
   // ── Theme state ──
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>('light');
   const isDark = theme === 'dark';
 
   // ── Live clock ──
@@ -168,7 +169,8 @@ export default function BDMDashboard() {
         <col style={{ width: '72px' }} />
         <col style={{ width: '108px' }} />
         <col style={{ width: '148px' }} />
-        <col style={{ width: '36px' }} />
+        {/* <col style={{ width: '36px' }} /> */}
+        <col style={{ width: '60px' }} />
       </colgroup>
       <thead>
         <tr>
@@ -182,7 +184,7 @@ export default function BDMDashboard() {
           <th>Type</th>
           <th>Assigned BDO</th>
           <th>Status</th>
-          <th></th>
+          <th>Info</th>
         </tr>
       </thead>
       <tbody>
@@ -198,9 +200,9 @@ export default function BDMDashboard() {
               <tr>
                 <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.date}</td>
                 <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>{m.timeSlot}</td>
-                <td className="primary" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.clientName || lead?.clientName}</td>
+                <td className="primary" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead?.clientName}</td>
                 <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead?.phoneNumber}</td>
-                <td style={{ color: 'var(--accent)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>&#8377;{lead?.loanRequirement}</td>
+                <td style={{ color: 'var(--accent)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>&#8377;{lead?.requiredAmount}</td>
                 <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tc?.name}</td>
                 <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bo?.name}</td>
                 <td><span className="product-chip">{m.meetingType}</span></td>
@@ -229,14 +231,18 @@ export default function BDMDashboard() {
                     statusBadge(m.status)
                   )}
                 </td>
-                {/* <td style={{ textAlign: 'center', padding: '8px 4px' }}>
-                  <button className="bdm-view-btn" onClick={() => setInfoMeeting(m)}>
-                    {Icons.eye}
+                <td style={{ textAlign: 'center', padding: '8px 4px' }}>
+                  <button
+                    className="bdm-view-btn"
+                    style={{ width: 'auto', padding: '4px 8px', fontSize: '10px', gap: '4px', display: 'inline-flex', alignItems: 'center' }}
+                    onClick={() => setViewFormLeadId(m.leadId)}
+                  >
+                    i
                   </button>
-                </td> */}
+                </td>
               </tr>
 
-              {(m.location || m.state || m.productType || m.finalRequirement || m.collateralValue) && (
+              {/* {(m.location || m.state || m.productType || m.finalRequirement || m.collateralValue) && (
                 <tr style={{ background: 'var(--bg3)' }}>
                   <td colSpan={11} style={{ padding: '7px 12px', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '10px', color: 'var(--text2)', fontFamily: "'JetBrains Mono', monospace" }}>
@@ -248,7 +254,7 @@ export default function BDMDashboard() {
                     </div>
                   </td>
                 </tr>
-              )}
+              )} */}
             </React.Fragment>
           );
         })}
@@ -777,18 +783,18 @@ export default function BDMDashboard() {
             <div className="modal-box">
               <div className="modal-title">{Icons.user} Assign BDO & Mark as Pending</div>
               <div className="modal-sub">// select a BDO to handle this meeting</div>
-              <div className="modal-client-card">
-                <div className="modal-client-name">{pendingAssignMeeting.clientName || lead?.clientName}</div>
+              {/* <div className="modal-client-card">
+                <div className="modal-client-name">{lead?.clientName}</div>
                 <div className="modal-detail-grid">
                   {lead?.phoneNumber && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>Phone:</span> {lead.phoneNumber}</span>}
                   {lead?.loanRequirement && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>Loan Req:</span> &#8377;{lead.loanRequirement}</span>}
-                  {pendingAssignMeeting.location && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>Location:</span> {pendingAssignMeeting.location}</span>}
-                  {pendingAssignMeeting.state && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>State:</span> {pendingAssignMeeting.state}</span>}
-                  {pendingAssignMeeting.productType && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>Product:</span> {pendingAssignMeeting.productType}</span>}
-                  {pendingAssignMeeting.finalRequirement != null && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>Final Req:</span> &#8377;{pendingAssignMeeting.finalRequirement}</span>}
-                  {pendingAssignMeeting.collateralValue != null && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>Collateral:</span> &#8377;{pendingAssignMeeting.collateralValue}</span>}
+                  {lead?.address && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>Location:</span> {lead.address}</span>}
+                  {lead?.state && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>State:</span> {lead.state}</span>}
+                  {lead?.requirementType && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>Product:</span> {lead.requirementType}</span>}
+                  {lead?.requiredAmount != null && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>Final Req:</span> &#8377;{lead.requiredAmount}</span>}
+                  {lead?.collateralValue != null && <span><span style={{ color: 'var(--text)', fontWeight: 600 }}>Collateral:</span> &#8377;{lead.collateralValue}</span>}
                 </div>
-              </div>
+              </div> */}
               <div className="modal-field">SELECT BDO TO ASSIGN</div>
               <select className="cc-select" value={selectedBdoId} onChange={e => setSelectedBdoId(e.target.value)}>
                 <option value="">Choose a BDO...</option>
@@ -812,12 +818,167 @@ export default function BDMDashboard() {
         );
       })()}
 
-      ══════════ MEETING DETAIL DIALOG — Eye Button ══════════
+      {/* ══════════ MEETING DETAIL DIALOG — Eye Button ══════════
       <MeetingDetailDialog
         isOpen={!!infoMeeting}
         meeting={infoMeeting}
         onClose={() => setInfoMeeting(null)}
-      />
+      /> */}
+
+      {viewFormLeadId && (() => {
+        const lead = leads.find(l => l.id === viewFormLeadId);
+        if (!lead) return null;
+        const val = (key: string) => (lead as any)[key] || '—';
+        const isDark = theme === 'dark';
+
+        const fieldStyle = {
+          background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+          borderRadius: '8px', padding: '10px 12px',
+        };
+        const labelStyle: React.CSSProperties = {
+          fontSize: '9px', fontWeight: 600, color: 'var(--text3)',
+          textTransform: 'uppercase', letterSpacing: '1px',
+          fontFamily: 'monospace', marginBottom: '4px', display: 'block',
+        };
+        const valStyle = { fontSize: '13px', color: 'var(--text)', fontWeight: 500 };
+        const sectionStyle: React.CSSProperties = {
+          fontSize: '11px', fontWeight: 700, color: 'var(--accent)',
+          fontFamily: 'monospace', letterSpacing: '2px', textTransform: 'uppercase',
+          marginBottom: '12px', marginTop: '8px',
+          paddingBottom: '6px',
+          borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+        };
+        const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' };
+        const grid3 = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' };
+
+        const Field = ({ label, k }: { label: string; k: string }) => (
+          <div style={fieldStyle}>
+            <label style={labelStyle}>{label}</label>
+            <div style={valStyle}>{val(k)}</div>
+          </div>
+        );
+
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1002, padding: '20px',
+          }}>
+            <div id="bdm-form-print-area" style={{
+              background: isDark ? '#0d0f1a' : '#fff',
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+              borderRadius: '16px', width: '100%', maxWidth: '820px',
+              maxHeight: '90vh', overflow: 'auto',
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: '18px 24px',
+                borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                position: 'sticky', top: 0,
+                background: isDark ? '#0d0f1a' : '#fff', zIndex: 1,
+              }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '16px' }}>Client Detail Form</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace' }}>
+                    {lead.clientName} · ₹{lead.loanRequirement}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="action-btn"
+                    style={{ background: 'rgba(61,127,255,0.1)', color: 'var(--accent)', borderColor: 'rgba(61,127,255,0.2)' }}
+                    onClick={() => {
+                      const printContents = document.getElementById('bdm-form-print-area')!.innerHTML;
+                      const win = window.open('', '_blank')!;
+                      win.document.write(`
+                  <html><head><title>Client Form - ${lead.clientName}</title>
+                  <style>
+                    body { font-family: Inter, sans-serif; padding: 24px; color: #111; }
+                    label { font-size: 9px; font-weight: 600; text-transform: uppercase;
+                      letter-spacing: 1px; color: #666; margin-bottom: 4px; display: block; }
+                    .field { background: #f5f5f5; border: 1px solid #e0e0e0;
+                      border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+                    .val { font-size: 13px; font-weight: 500; }
+                    .section { font-size: 11px; font-weight: 700; color: #2563eb;
+                      letter-spacing: 2px; text-transform: uppercase;
+                      border-bottom: 1px solid #e0e0e0;
+                      padding-bottom: 6px; margin: 16px 0 12px; }
+                    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+                    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+                    button { display: none !important; }
+                  </style></head><body>${printContents}</body></html>
+                `);
+                      win.document.close();
+                      win.focus(); win.print(); win.close();
+                    }}
+                  >🖨 Print</button>
+                  <button
+                    className="action-btn"
+                    style={{ background: 'rgba(255,71,87,0.1)', color: 'var(--danger)', borderColor: 'rgba(255,71,87,0.2)' }}
+                    onClick={() => setViewFormLeadId(null)}
+                  >✕ Close</button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div style={{ padding: '24px' }}>
+                <div style={sectionStyle}>Basic Information</div>
+                <div style={grid2}>
+                  <Field label="Client Name" k="clientName" />
+                  <Field label="Contact Number" k="contactNumber" />
+                  <Field label="Email" k="email" />
+                  <Field label="State" k="state" />
+                </div>
+                <div style={{ ...fieldStyle, marginBottom: '14px' }}>
+                  <label style={labelStyle}>Address</label>
+                  <div style={valStyle}>{val('address')}</div>
+                </div>
+
+                <div style={sectionStyle}>Business Information</div>
+                <div style={grid2}>
+                  <Field label="Entity Name" k="entityName" />
+                  <Field label="Entity Type" k="entityType" />
+                  <Field label="Nature of Business" k="natureOfBusiness" />
+                  <Field label="Business Place" k="businessPlace" />
+                  <Field label="Business Vintage" k="businessVintage" />
+                  <Field label="DSA Name" k="dsaName" />
+                </div>
+                <div style={{ ...fieldStyle, marginBottom: '14px' }}>
+                  <label style={labelStyle}>Business Description</label>
+                  <div style={valStyle}>{val('businessDescription')}</div>
+                </div>
+
+                <div style={sectionStyle}>Financial Information</div>
+                <div style={grid3}>
+                  <Field label="Last Year Turnover" k="lastYearTurnover" />
+                  <Field label="Last Year Net Profit" k="lastYearNetProfit" />
+                  <Field label="Liability Amount" k="liabilityAmount" />
+                  <Field label="Bank Name" k="bankName" />
+                  <Field label="Loan Amount Status" k="loanAmountStatus" />
+                </div>
+
+                <div style={sectionStyle}>Loan Requirement</div>
+                <div style={grid2}>
+                  <Field label="Requirement Type" k="requirementType" />
+                  <Field label="Required Amount" k="requiredAmount" />
+                  <Field label="Collateral Type" k="collateralType" />
+                  <Field label="Collateral Value" k="collateralValue" />
+                </div>
+                <div style={{ ...fieldStyle, marginBottom: '14px' }}>
+                  <label style={labelStyle}>Collateral Description</label>
+                  <div style={valStyle}>{val('collateralDescription')}</div>
+                </div>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>Project Description</label>
+                  <div style={valStyle}>{val('projectDescription')}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }

@@ -1,15 +1,12 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Fragment } from 'react';
 import { useCRM } from '@/contexts/CRMContext';
 import { Meeting } from '@/types/crm';
 import { toast } from 'sonner';
-import MeetingDetailDialog from '@/components/MeetingDetailDialog';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = 'overview' | 'pending' | 'followup' | 'history';
 type Theme = 'dark' | 'light';
 type Period = 'daily' | 'weekly' | 'monthly' | 'custom';
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
 const I = {
   overview: <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
   pending:  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>,
@@ -19,37 +16,29 @@ const I = {
   moon:     <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>,
   logout:   <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
   bell:     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
-  check:    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
-  walk:     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><path d="M8 22l2-8-2-4h8l-2 4 2 8"/><path d="M6 11l2-3M18 11l-2-3"/></svg>,
-  invalid:  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  eye:      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-  calendar: <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
-  phone:    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .92h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>,
+  msg:      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  check:    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
+  x:        <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   rupee:    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="6" y1="4" x2="18" y2="4"/><line x1="6" y1="9" x2="18" y2="9"/><line x1="15" y1="14" x2="6" y2="21"/><path d="M6 9a6 6 0 000 5h3"/></svg>,
-  clear:    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>,
+  chevron:  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>,
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function getDateRange(period: Period, customFrom: string, customTo: string) {
   const today = new Date();
   const fmt = (d: Date) => d.toISOString().split('T')[0];
-  if (period === 'daily')   return { from: fmt(today), to: fmt(today) };
-  if (period === 'weekly')  { const mon = new Date(today); mon.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); return { from: fmt(mon), to: fmt(today) }; }
+  if (period === 'daily') return { from: fmt(today), to: fmt(today) };
+  if (period === 'weekly') { const mon = new Date(today); mon.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); return { from: fmt(mon), to: fmt(today) }; }
   if (period === 'monthly') { const first = new Date(today.getFullYear(), today.getMonth(), 1); return { from: fmt(first), to: fmt(today) }; }
   return { from: customFrom || fmt(today), to: customTo || fmt(today) };
 }
 
 function statusColor(status: string) {
   const map: Record<string, string> = {
-    'Pending':             'var(--warning)',
-    'Follow-up':          'var(--purple)',
-    'Walk-in Done':       'var(--teal)',
-    'Walking Done':       'var(--success)',
-    'Invalid':            'var(--danger)',
-    'Meeting Done':       'var(--success)',
-    'Scheduled':          'var(--accent)',
-    'Not Done':           'var(--danger)',
-    'Reschedule Requested':'var(--orange)',
+    'Pending': 'var(--warning)', 'Follow-up': 'var(--purple)',
+    'Walk-in Done': 'var(--teal)', 'Walking Done': 'var(--success)',
+    'Invalid': 'var(--danger)', 'Meeting Done': 'var(--success)',
+    'Scheduled': 'var(--accent)', 'Not Done': 'var(--danger)',
+    'Reschedule Requested': 'var(--orange)',
   };
   return map[status] || 'var(--text3)';
 }
@@ -63,7 +52,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ─── Sparkline SVG ─────────────────────────────────────────────────────────
 function Sparkline({ data, color }: { data: number[]; color: string }) {
   if (data.length < 2) return null;
   const max = Math.max(...data, 1);
@@ -77,26 +65,9 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-// ─── Bar Chart ─────────────────────────────────────────────────────────────
-function BarChart({ data, colors }: { data: { label: string; value: number }[]; colors: string[] }) {
-  const max = Math.max(...data.map(d => d.value), 1);
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '80px', padding: '0 4px' }}>
-      {data.map((d, i) => (
-        <div key={d.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1 }}>
-          <span style={{ fontSize: '10px', fontWeight: 700, color: colors[i % colors.length], fontFamily: "'JetBrains Mono', monospace" }}>{d.value}</span>
-          <div style={{ width: '100%', borderRadius: '4px 4px 0 0', background: colors[i % colors.length], opacity: 0.85, height: `${Math.max((d.value / max) * 56, d.value > 0 ? 4 : 0)}px`, transition: 'height 0.5s ease', minHeight: d.value > 0 ? '4px' : '0' }} />
-          <span style={{ fontSize: '9px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", textAlign: 'center', lineHeight: 1.2 }}>{d.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─── Donut Chart ────────────────────────────────────────────────────────────
 function DonutChart({ segments }: { segments: { label: string; value: number; color: string }[] }) {
   const total = segments.reduce((s, d) => s + d.value, 0);
-  if (total === 0) return <div style={{ textAlign: 'center', color: 'var(--text3)', fontSize: '11px', padding: '20px 0', fontFamily: "'JetBrains Mono', monospace" }}>no data</div>;
+  if (total === 0) return <div style={{ textAlign: 'center', color: 'var(--text3)', fontSize: '11px', padding: '20px 0' }}>no data</div>;
   let offset = 0;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -110,8 +81,8 @@ function DonutChart({ segments }: { segments: { label: string; value: number; co
           })}
         </svg>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text)', fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{total}</span>
-          <span style={{ fontSize: '8px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.5px' }}>total</span>
+          <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text)', fontFamily: "'JetBrains Mono', monospace" }}>{total}</span>
+          <span style={{ fontSize: '8px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>total</span>
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 }}>
@@ -127,26 +98,30 @@ function DonutChart({ segments }: { segments: { label: string; value: number; co
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
 export default function BDODashboard() {
-  const { currentUser, leads, users, meetings, updateMeeting, logout } = useCRM();
+  const { currentUser, leads, users, meetings, meetingRemarks, addMeetingRemark, updateMeeting, logout } = useCRM();
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>('light');
   const [period, setPeriod] = useState<Period>('monthly');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
-  const [infoMeeting, setInfoMeeting] = useState<Meeting | null>(null);
   const [clock, setClock] = useState('');
   const [alerts, setAlerts] = useState<{ id: string; msg: string; type: 'warn' | 'info' }[]>([]);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [walkinDateMap, setWalkinDateMap] = useState<Record<string, string>>({});
 
-  // Live clock
+  // Expand state
+  const [expandedMeeting, setExpandedMeeting] = useState<string | null>(null);
+  const [remarkText, setRemarkText] = useState<Record<string, string>>({});
+
+  // view detail states
+  const [viewFormLeadId, setViewFormLeadId] = useState<string | null>(null);
+
   useEffect(() => {
     const tick = () => {
       const n = new Date();
-      setClock(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')} ${n.getHours()>=12?'PM':'AM'}`);
+      setClock(`${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}:${String(n.getSeconds()).padStart(2, '0')} ${n.getHours() >= 12 ? 'PM' : 'AM'}`);
     };
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
   }, []);
@@ -156,53 +131,37 @@ export default function BDODashboard() {
   const { from, to } = getDateRange(period, customFrom, customTo);
   const isDark = theme === 'dark';
 
-  // ── All BDO meetings (unfiltered for alert checks) ──
   const allMyMeetings = useMemo(() => meetings.filter((m: Meeting) => m.bdoId === currentUser?.id), [meetings, currentUser]);
+  const filteredMeetings = useMemo(() => allMyMeetings.filter((m: Meeting) => m.date >= from && m.date <= to), [allMyMeetings, from, to]);
 
-  // ── Period-filtered meetings ──
-  const filteredMeetings = useMemo(() => {
-    return allMyMeetings.filter((m: Meeting) => m.date >= from && m.date <= to);
-  }, [allMyMeetings, from, to]);
+  const pendingMeetings = useMemo(() =>
+    allMyMeetings.filter((m: Meeting) => m.status === 'Pending' && (m.bdoStatus === undefined || m.bdoStatus === null)),
+    [allMyMeetings]
+  );
 
-  // ── Categories (from allMyMeetings for pending/followup tabs, filteredMeetings for history) ──
-  // const pendingMeetings  = useMemo(() => allMyMeetings.filter((m: Meeting) => m.status === 'Pending' && (!m.bdoStatus || m.bdoStatus === '')), [allMyMeetings]);
-  const pendingMeetings = useMemo(
-  () =>
-    allMyMeetings.filter(
-      (m: Meeting) =>
-        m.status === "Pending" &&
-        (m.bdoStatus === undefined || m.bdoStatus === null)
-    ),
-  [allMyMeetings]
-);
-  const followUpMeetings = useMemo(() => allMyMeetings.filter((m: Meeting) => m.bdoStatus === 'Follow-up' && m.walkingStatus !== 'Walking Done' && m.walkingStatus !== 'Invalid'), [allMyMeetings]);
-  const walkingDone      = useMemo(() => filteredMeetings.filter((m: Meeting) => m.walkingStatus === 'Walking Done'), [filteredMeetings]);
-  const walkingInvalid   = useMemo(() => filteredMeetings.filter((m: Meeting) => m.walkingStatus === 'Invalid'), [filteredMeetings]);
-  const walkInTotal      = useMemo(() => filteredMeetings.filter((m: Meeting) => m.meetingType === 'Walk-in'), [filteredMeetings]);
+  const followUpMeetings = useMemo(() =>
+    allMyMeetings.filter((m: Meeting) => m.bdoStatus === 'Follow-up' && m.walkingStatus !== 'Walking Done' && m.walkingStatus !== 'Invalid'),
+    [allMyMeetings]
+  );
 
-  // ── Stats for period ──
   const stats = useMemo(() => ({
-    total:       filteredMeetings.length,
-    pending:     filteredMeetings.filter((m: Meeting) => m.status === 'Pending' && !m.bdoStatus).length,
-    followup:    filteredMeetings.filter((m: Meeting) => m.bdoStatus === 'Follow-up').length,
-    walkInDone:  filteredMeetings.filter((m: Meeting) => m.walkingStatus === 'Walking Done').length,
+    total: filteredMeetings.length,
+    pending: filteredMeetings.filter((m: Meeting) => m.status === 'Pending' && !m.bdoStatus).length,
+    followup: filteredMeetings.filter((m: Meeting) => m.bdoStatus === 'Follow-up').length,
+    walkInDone: filteredMeetings.filter((m: Meeting) => m.walkingStatus === 'Walking Done').length,
     walkInInvalid: filteredMeetings.filter((m: Meeting) => m.walkingStatus === 'Invalid').length,
-    walkInTotal: filteredMeetings.filter((m: Meeting) => m.meetingType === 'Walk-in').length,
-    notDone:     filteredMeetings.filter((m: Meeting) => m.status === 'Not Done').length,
-    scheduled:   filteredMeetings.filter((m: Meeting) => m.status === 'Scheduled').length,
+    notDone: filteredMeetings.filter((m: Meeting) => m.status === 'Not Done').length,
+    scheduled: filteredMeetings.filter((m: Meeting) => m.status === 'Scheduled').length,
   }), [filteredMeetings]);
 
-  // ── Daily trend (last 7 or 30 days) ──
   const dailyTrend = useMemo(() => {
     const days = period === 'daily' ? 7 : period === 'weekly' ? 7 : 30;
     return Array.from({ length: days }, (_, i) => {
       const d = new Date(); d.setDate(d.getDate() - (days - 1 - i));
-      const dateStr = d.toISOString().split('T')[0];
-      return allMyMeetings.filter((m: Meeting) => m.date === dateStr).length;
+      return allMyMeetings.filter((m: Meeting) => m.date === d.toISOString().split('T')[0]).length;
     });
   }, [allMyMeetings, period]);
 
-  // ── Alert system ──
   useEffect(() => {
     const newAlerts: { id: string; msg: string; type: 'warn' | 'info' }[] = [];
     if (pendingMeetings.length > 0)
@@ -211,13 +170,12 @@ export default function BDODashboard() {
       newAlerts.push({ id: 'followup', msg: `${followUpMeetings.length} follow-up meeting${followUpMeetings.length > 1 ? 's' : ''} need attention`, type: 'info' });
     const overdueWalkin = allMyMeetings.filter((m: Meeting) => m.bdoStatus === 'Follow-up' && m.walkinDate && m.walkinDate < today && m.walkingStatus !== 'Walking Done' && m.walkingStatus !== 'Invalid');
     if (overdueWalkin.length > 0)
-      newAlerts.push({ id: 'overdue_walkin', msg: `${overdueWalkin.length} walk-in date(s) overdue — mark as Done or Invalid`, type: 'warn' });
+      newAlerts.push({ id: 'overdue_walkin', msg: `${overdueWalkin.length} walk-in date(s) overdue`, type: 'warn' });
     setAlerts(newAlerts);
   }, [pendingMeetings.length, followUpMeetings.length, allMyMeetings, today]);
 
   const visibleAlerts = alerts.filter(a => !dismissedAlerts.has(a.id));
 
-  // ── Actions — optimistic update ──
   const handleFollowUp = async (meetingId: string) => {
     await updateMeeting(meetingId, { bdoStatus: 'Follow-up', bdoId: currentUser?.id });
     toast.success('Marked as Follow-up');
@@ -230,8 +188,8 @@ export default function BDODashboard() {
     toast.success('Walk-in date set');
   };
 
-  const handleWalkingDone = async (meeting: Meeting) => {
-    await updateMeeting(meeting.id, { walkingStatus: 'Walking Done', bdoStatus: 'Walk-in Done' });
+  const handleWalkingDone = async (meetingId: string) => {
+    await updateMeeting(meetingId, { walkingStatus: 'Walking Done', bdoStatus: 'Walk-in Done' });
     toast.success('Walk-in marked as Done');
   };
 
@@ -240,194 +198,341 @@ export default function BDODashboard() {
     toast.success('Walk-in marked as Invalid');
   };
 
-  // ── Meeting row renderer ──────────────────────────────────────────────────
-  const renderMeetingRow = (m: Meeting, showActions = false) => {
-    const lead = leads.find((l: any) => l.id === m.leadId);
-    const bdm  = users.find((u: any) => u.id === m.bdmId);
-    const isOverdueWalkin = m.bdoStatus === 'Follow-up' && m.walkinDate && m.walkinDate < today && m.walkingStatus !== 'Walking Done' && m.walkingStatus !== 'Invalid';
+  const handleAddRemark = async (meetingId: string) => {
+    const text = remarkText[meetingId]?.trim();
+    if (!text) { toast.error('Enter a remark'); return; }
+    await addMeetingRemark(meetingId, text, currentUser?.name || 'BDO');
+    setRemarkText(prev => ({ ...prev, [meetingId]: '' }));
+    toast.success('Remark added');
+  };
+
+  // ─── Expanded Panel ────────────────────────────────────────────────────────
+  const renderExpandedPanel = (m: Meeting) => {
+    const lead = leads.find(l => l.id === m.leadId);
+    const bdm = users.find(u => u.id === m.bdmId);
+    const walkinInput = walkinDateMap[m.id] ?? m.walkinDate ?? '';
+    const mRemarks = meetingRemarks
+      .filter(r => r.meetingId === m.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const isOverdue = walkinInput && walkinInput < today;
+
     return (
-      <tr key={m.id} style={{ background: isOverdueWalkin ? 'rgba(255,71,87,0.04)' : undefined }}>
-        <td className="bdo-td bdo-pri">
-          <div style={{ fontWeight: 600, color: 'var(--text)' }}>{m.clientName || lead?.clientName || '—'}</div>
-          <div style={{ fontSize: '10px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>₹{lead?.loanRequirement || '—'}</div>
-        </td>
-        <td className="bdo-td">
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: 'var(--text2)' }}>{m.date}</div>
-          <div style={{ fontSize: '10px', color: 'var(--accent)', fontFamily: "'JetBrains Mono', monospace" }}>{m.timeSlot}</div>
-        </td>
-        <td className="bdo-td">
-          <span style={{ fontSize: '11px', color: 'var(--text2)' }}>{lead?.phoneNumber || '—'}</span>
-        </td>
-        <td className="bdo-td">
-          <span style={{ fontSize: '11px', color: 'var(--text2)' }}>{bdm?.name || '—'}</span>
-        </td>
-        <td className="bdo-td">
-          <span style={{ fontSize: '10px', background: 'var(--surface2)', color: 'var(--text2)', padding: '2px 7px', borderRadius: '4px', fontFamily: "'JetBrains Mono', monospace" }}>{m.meetingType || '—'}</span>
-        </td>
-        <td className="bdo-td">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <StatusBadge status={m.status} />
-            {m.bdoStatus && <StatusBadge status={m.bdoStatus} />}
-            {m.walkingStatus && <StatusBadge status={m.walkingStatus} />}
-            {m.walkinDate && (
-              <span style={{ fontSize: '9px', color: isOverdueWalkin ? 'var(--danger)' : 'var(--teal)', fontFamily: "'JetBrains Mono', monospace" }}>
-                {isOverdueWalkin ? '⚠ ' : ''}WI: {m.walkinDate}
-              </span>
-            )}
+      <tr>
+        <td colSpan={8} style={{ padding: 0, borderBottom: '1px solid var(--border2)' }}>
+          <div style={{
+            background: isDark ? 'rgba(245,158,11,0.03)' : 'rgba(245,158,11,0.02)',
+            borderTop: '1px solid var(--border2)',
+            padding: '16px 18px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0,1fr))',
+            gap: '14px',
+          }}>
+
+            {/* Walk-in Management */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '13px' }}>
+              <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '1.5px', color: 'var(--text3)', textTransform: 'uppercase', fontFamily: "'JetBrains Mono',monospace", marginBottom: '10px' }}>
+                📅 WALK-IN MANAGEMENT
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text3)', fontFamily: 'monospace' }}>
+                  {m.walkinDate ? `Current: ${m.walkinDate}` : 'No walk-in date set'}
+                </div>
+                <input
+                  type="date"
+                  value={walkinInput}
+                  min={today}
+                  onChange={e => setWalkinDateMap(prev => ({ ...prev, [m.id]: e.target.value }))}
+                  style={{
+                    background: 'var(--bg3)', border: `1px solid ${isOverdue ? 'var(--danger)' : 'var(--border2)'}`,
+                    borderRadius: '6px', padding: '5px 8px', color: 'var(--text)',
+                    fontSize: '11px', outline: 'none', width: '100%', boxSizing: 'border-box',
+                  }}
+                />
+                {isOverdue && <span style={{ fontSize: '9px', color: 'var(--danger)', fontFamily: 'monospace' }}>⚠ Overdue</span>}
+                <button
+                  disabled={!walkinInput}
+                  onClick={() => handleSetWalkinDate(m.id, walkinInput)}
+                  style={{
+                    padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border2)',
+                    background: walkinInput ? 'rgba(245,158,11,0.1)' : 'var(--surface2)',
+                    color: walkinInput ? 'var(--warning)' : 'var(--text3)',
+                    fontSize: '10px', fontWeight: 600, cursor: walkinInput ? 'pointer' : 'not-allowed',
+                    fontFamily: "'JetBrains Mono',monospace",
+                  }}
+                >
+                  {m.walkinDate ? '📅 Update Date' : '📅 Set Date'}
+                </button>
+
+                {m.walkinDate && !m.walkingStatus && (
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+                    <button
+                      onClick={() => handleWalkingDone(m.id)}
+                      style={{
+                        flex: 1, padding: '5px 6px', borderRadius: '6px',
+                        background: 'rgba(0,212,170,0.1)', color: 'var(--success)',
+                        border: '1px solid rgba(0,212,170,0.25)', fontSize: '10px',
+                        fontWeight: 700, cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace",
+                      }}
+                    >✓ Walk-in Done</button>
+                    <button
+                      onClick={() => handleWalkingInvalid(m.id)}
+                      style={{
+                        flex: 1, padding: '5px 6px', borderRadius: '6px',
+                        background: 'rgba(255,71,87,0.1)', color: 'var(--danger)',
+                        border: '1px solid rgba(255,71,87,0.25)', fontSize: '10px',
+                        fontWeight: 700, cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace",
+                      }}
+                    >✕ Denied for Walkin</button>
+                  </div>
+                )}
+
+                {m.walkingStatus && (
+                  <div style={{
+                    padding: '5px 9px', borderRadius: '6px', fontSize: '10px', fontWeight: 700,
+                    fontFamily: 'monospace',
+                    background: m.walkingStatus === 'Walking Done' ? 'rgba(0,212,170,0.1)' : 'rgba(255,71,87,0.1)',
+                    color: m.walkingStatus === 'Walking Done' ? 'var(--success)' : 'var(--danger)',
+                    border: `1px solid ${m.walkingStatus === 'Walking Done' ? 'rgba(0,212,170,0.2)' : 'rgba(255,71,87,0.2)'}`,
+                  }}>
+                    {m.walkingStatus === 'Walking Done' ? '✓ Walk-in Done' : '✕ Denied for Walk-in'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Status Info */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '13px' }}>
+              <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '1.5px', color: 'var(--text3)', textTransform: 'uppercase', fontFamily: "'JetBrains Mono',monospace", marginBottom: '10px' }}>
+                📊 STATUS INFO
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace' }}>Meeting</span>
+                  <StatusBadge status={m.status} />
+                </div>
+                {m.bdoStatus && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace' }}>BDO Status</span>
+                    <StatusBadge status={m.bdoStatus} />
+                  </div>
+                )}
+                {m.walkinDate && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace' }}>Walk-in Date</span>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--accent)', fontFamily: 'monospace' }}>{m.walkinDate}</span>
+                  </div>
+                )}
+
+                <div style={{ paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text3)', fontFamily: 'monospace', marginBottom: '5px' }}>LEAD INFO</div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>{lead?.clientName || '—'}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--warning)', fontFamily: 'monospace' }}>₹{lead?.loanRequirement}</div>
+                  {lead?.phoneNumber && <div style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace', marginTop: '2px' }}>{lead.phoneNumber}</div>}
+                  <div style={{ marginTop: '5px' }}>{bdm && <span style={{ fontSize: '10px', color: 'var(--text2)' }}>BDM: {bdm.name}</span>}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Remarks */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '13px' }}>
+              <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '1.5px', color: 'var(--text3)', textTransform: 'uppercase', fontFamily: "'JetBrains Mono',monospace", marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                💬 REMARKS
+                {mRemarks.length > 0 && (
+                  <span style={{ background: 'var(--warning)', color: '#fff', fontSize: '9px', padding: '1px 6px', borderRadius: '8px', fontWeight: 700 }}>
+                    {mRemarks.length}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '130px', overflowY: 'auto', marginBottom: '8px' }}>
+                {mRemarks.length === 0 && (
+                  <div style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace' }}>No remarks yet</div>
+                )}
+                {mRemarks.map(r => (
+                  <div key={r.id} style={{
+                    background: 'var(--bg3)', border: '1px solid var(--border)',
+                    borderRadius: '6px', padding: '6px 9px',
+                  }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text)', marginBottom: '2px' }}>{r.remark}</div>
+                    <div style={{ fontSize: '9px', color: 'var(--text3)', fontFamily: 'monospace' }}>
+                      {r.createdBy} · {new Date(r.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <input
+                  value={remarkText[m.id] || ''}
+                  onChange={e => setRemarkText(prev => ({ ...prev, [m.id]: e.target.value }))}
+                  placeholder="Add remark..."
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddRemark(m.id); }}
+                  style={{
+                    flex: 1, background: 'var(--bg3)', border: '1px solid var(--border2)',
+                    borderRadius: '6px', padding: '5px 8px', color: 'var(--text)',
+                    fontSize: '11px', outline: 'none', fontFamily: 'inherit',
+                  }}
+                />
+                <button
+                  onClick={() => handleAddRemark(m.id)}
+                  style={{
+                    padding: '5px 10px', borderRadius: '6px', border: 'none',
+                    background: 'var(--warning)', color: '#fff',
+                    fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  {I.msg}
+                </button>
+              </div>
+            </div>
+
           </div>
         </td>
-        {showActions && (
-          <td className="bdo-td">
-            <button className="bdo-view-btn" onClick={() => setInfoMeeting(m)}>
-              {I.eye} View
-            </button>
-          </td>
-        )}
       </tr>
     );
   };
 
-  // ─── RENDER ────────────────────────────────────────────────────────────────
+  // ─── Meeting Row renderer ──────────────────────────────────────────────────
+  const renderMeetingRow = (m: Meeting, colSpan = 8) => {
+    const lead = leads.find(l => l.id === m.leadId);
+    const bdm = users.find(u => u.id === m.bdmId);
+    const isExp = expandedMeeting === m.id;
+    const walkinInput = walkinDateMap[m.id] ?? m.walkinDate ?? '';
+    const isOverdue = walkinInput && walkinInput < today;
+
+    return (
+      <Fragment key={m.id}>
+        <tr
+          style={{ cursor: 'pointer', background: isExp ? (isDark ? 'rgba(245,158,11,0.04)' : 'rgba(245,158,11,0.03)') : isOverdue ? 'rgba(255,71,87,0.04)' : undefined, transition: 'background 0.12s' }}
+          onClick={() => setExpandedMeeting(isExp ? null : m.id)}
+        >
+          <td className="bdo-td bdo-pri">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: 'var(--warning)', flexShrink: 0 }}>
+                {(lead?.clientName || '?')[0]}
+              </div>
+              <div>
+                <div>{lead?.clientName || '—'}</div>
+                <div style={{ fontSize: '10px', color: 'var(--text3)', fontFamily: "'JetBrains Mono',monospace" }}>₹{lead?.loanRequirement}</div>
+              </div>
+            </div>
+          </td>
+          <td className="bdo-td">
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '11px' }}>{m.date}</div>
+            <div style={{ fontSize: '10px', color: 'var(--warning)', fontFamily: "'JetBrains Mono',monospace" }}>{m.timeSlot}</div>
+          </td>
+          <td className="bdo-td" style={{ fontSize: '11px', color: 'var(--text2)' }}>{lead?.phoneNumber || '—'}</td>
+          <td className="bdo-td" style={{ fontSize: '11px' }}>{bdm?.name || '—'}</td>
+          <td className="bdo-td"><span style={{ fontSize: '10px', background: 'var(--surface2)', color: 'var(--text2)', padding: '2px 7px', borderRadius: '4px' }}>{m.meetingType}</span></td>
+          <td className="bdo-td">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <StatusBadge status={m.status} />
+              {m.bdoStatus && <StatusBadge status={m.bdoStatus} />}
+            </div>
+          </td>
+          <td className="bdo-td" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '10px', color: isOverdue ? 'var(--danger)' : 'var(--text3)' }}>
+            {m.walkinDate ? (isOverdue ? `⚠ ${m.walkinDate}` : m.walkinDate) : '—'}
+          </td>
+          <td className="bdo-td">
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '4px',
+              fontSize: '10px', color: 'var(--text3)', fontFamily: 'monospace',
+              transition: 'transform 0.2s',
+              transform: isExp ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}>
+              {I.chevron}
+            </span>
+          </td>
+        </tr>
+        {isExp && renderExpandedPanel(m)}
+      </Fragment>
+    );
+  };
+
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
-
-        .bdo-root.dark {
-          --bg: #07080f; --bg2: #0d0f1a; --bg3: #12152a;
-          --surface: #161929; --surface2: #1c2038;
-          --border: rgba(255,255,255,0.06); --border2: rgba(255,255,255,0.1);
-          --accent: #3d7fff; --success: #00d4aa; --warning: #f59e0b;
-          --danger: #ff4757; --purple: #a78bfa; --orange: #ff6b35; --teal: #06b6d4;
-          --text: #e8eaf6; --text2: #8892b0; --text3: #4a5568;
-        }
-        .bdo-root.light {
-          --bg: #f4f5fa; --bg2: #ffffff; --bg3: #eef0f7;
-          --surface: #ffffff; --surface2: #eef0f7;
-          --border: rgba(0,0,0,0.07); --border2: rgba(0,0,0,0.12);
-          --accent: #2563eb; --success: #059669; --warning: #d97706;
-          --danger: #dc2626; --purple: #7c3aed; --orange: #ea580c; --teal: #0891b2;
-          --text: #0f172a; --text2: #475569; --text3: #94a3b8;
-        }
-
-        .bdo-root { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.25s, color 0.25s; }
-        .bdo-layout { display: flex; min-height: 100vh; }
-
-        /* ── SIDEBAR ── */
-        .bdo-sidebar { width: 220px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow: hidden; transition: background 0.25s; }
-        .bdo-sidebar::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--warning), var(--orange), transparent); }
-        .bdo-brand { padding: 22px 20px 16px; border-bottom: 1px solid var(--border); }
-        .bdo-brand-tag { font-size: 9px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--warning); font-family: 'JetBrains Mono', monospace; margin-bottom: 6px; }
-        .bdo-brand-name { font-size: 17px; font-weight: 800; color: var(--text); line-height: 1.2; }
-        .bdo-user { margin: 12px 18px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px; display: flex; align-items: center; gap: 9px; }
-        .bdo-user-ava { width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, var(--warning), var(--orange)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
-        .bdo-user-name { font-size: 12px; font-weight: 600; color: var(--text); }
-        .bdo-user-role { font-size: 9px; color: var(--warning); font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; }
-        .bdo-nav-section { padding: 6px 12px; margin-top: 2px; }
-        .bdo-nav-label { font-size: 9px; font-weight: 600; letter-spacing: 2.5px; color: var(--text3); text-transform: uppercase; font-family: 'JetBrains Mono', monospace; padding: 0 8px; margin-bottom: 3px; }
-        .bdo-nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 11px; border-radius: 9px; cursor: pointer; transition: all 0.15s; font-size: 12px; font-weight: 500; color: var(--text2); position: relative; margin-bottom: 1px; }
-        .bdo-nav-item:hover { background: var(--surface2); color: var(--text); }
-        .bdo-nav-item.active { background: var(--surface2); color: var(--warning); }
-        .bdo-nav-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 60%; background: var(--warning); border-radius: 0 3px 3px 0; }
-        .bdo-nav-icon { width: 16px; height: 16px; opacity: 0.6; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .bdo-nav-item.active .bdo-nav-icon { opacity: 1; }
-        .bdo-nav-badge { margin-left: auto; font-size: 9px; font-weight: 700; background: var(--danger); color: #fff; padding: 1px 6px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; }
-        .bdo-nav-badge.info { background: var(--warning); }
-        .bdo-sidebar-foot { margin-top: auto; padding: 12px 18px; border-top: 1px solid var(--border); }
-        .bdo-status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--success); margin-right: 5px; animation: pdot 2s infinite; }
-        @keyframes pdot { 0%,100%{opacity:1}50%{opacity:0.3} }
-        .bdo-footer-info { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-bottom: 10px; }
-        .bdo-theme-toggle { display: flex; background: var(--bg3); border: 1px solid var(--border2); border-radius: 18px; padding: 3px; margin-bottom: 8px; cursor: pointer; }
-        .bdo-toggle-opt { display: flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 13px; font-size: 10px; font-weight: 600; color: var(--text3); transition: all 0.2s; font-family: 'JetBrains Mono', monospace; flex: 1; justify-content: center; }
-        .bdo-toggle-opt.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
-        .bdo-logout-btn { display: flex; align-items: center; gap: 7px; width: 100%; padding: 8px 11px; border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--text2); cursor: pointer; background: var(--surface); border: 1px solid var(--border); transition: all 0.15s; font-family: inherit; }
-        .bdo-logout-btn:hover { color: var(--text); border-color: var(--border2); }
-
-        /* ── MAIN ── */
-        .bdo-main { flex: 1; overflow: auto; padding: 26px 28px 60px; }
-        .bdo-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-        .bdo-page-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
-        .bdo-page-sub { font-size: 10px; color: var(--text2); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
-        .bdo-clock { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2); background: var(--surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: 7px; }
-
-        /* ── PERIOD FILTER ── */
-        .period-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
-        .period-btn { padding: 5px 13px; border-radius: 7px; border: 1px solid var(--border2); cursor: pointer; font-size: 11px; font-weight: 600; color: var(--text2); background: var(--surface); transition: all 0.15s; font-family: 'JetBrains Mono', monospace; }
-        .period-btn.active { border-color: var(--warning); color: var(--warning); background: rgba(245,158,11,0.08); }
-        .period-date { background: var(--surface); border: 1px solid var(--border2); border-radius: 7px; padding: 5px 9px; color: var(--text); font-size: 11px; font-family: 'JetBrains Mono', monospace; outline: none; }
-        .period-date:focus { border-color: var(--warning); }
-        .period-label { font-size: 9px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
-        .period-range-badge { font-size: 10px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; }
-
-        /* ── ALERTS ── */
-        .alert-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
-        .alert-item { display: flex; align-items: center; gap: 10px; padding: 9px 13px; border-radius: 9px; position: relative; overflow: hidden; }
-        .alert-warn { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); }
-        .alert-info { background: rgba(6,182,212,0.06); border: 1px solid rgba(6,182,212,0.18); }
-        .alert-warn::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--warning); }
-        .alert-info::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--teal); }
-        .alert-msg { font-size: 12px; color: var(--text); flex: 1; }
-        .alert-dismiss { font-size: 10px; color: var(--text3); cursor: pointer; font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border: 1px solid var(--border2); border-radius: 5px; background: transparent; }
-        .alert-dismiss:hover { color: var(--text2); }
-        .alert-go { font-size: 10px; cursor: pointer; font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border-radius: 5px; background: transparent; border: 1px solid; }
-        .alert-warn .alert-go { color: var(--warning); border-color: rgba(245,158,11,0.3); }
-        .alert-info .alert-go { color: var(--teal); border-color: rgba(6,182,212,0.3); }
-
-        /* ── KPI CARDS ── */
-        .kpi-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 16px; }
-        .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px 14px; transition: transform 0.15s; }
-        .kpi-card:hover { transform: translateY(-2px); }
-        .kpi-label { font-size: 9px; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase; color: var(--text2); font-family: 'JetBrains Mono', monospace; margin-bottom: 7px; }
-        .kpi-val { font-size: 32px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
-        .kpi-spark { display: flex; justify-content: flex-end; margin-top: 6px; }
-
-        /* ── GLASS CARDS ── */
-        .bdo-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 14px; transition: background 0.25s; }
-        .bdo-card-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 10px; border-bottom: 1px solid var(--border); }
-        .bdo-card-title { font-size: 12px; font-weight: 700; color: var(--text); }
-        .bdo-card-sub { font-size: 10px; color: var(--text2); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
-        .bdo-card-body { padding: 14px 16px; }
-        .two-col { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); gap: 14px; margin-bottom: 14px; }
-        .three-col { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; margin-bottom: 14px; }
-
-        /* ── TABLE ── */
-        .bdo-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        .bdo-table th { padding: 8px 10px; text-align: left; font-size: 9px; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase; color: var(--text3); font-family: 'JetBrains Mono', monospace; border-bottom: 1px solid var(--border); }
-        .bdo-td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-        .bdo-table tr:last-child .bdo-td { border-bottom: none; }
-        .bdo-table tbody tr { transition: background 0.1s; }
-        .bdo-table tbody tr:hover { background: var(--surface2); }
-        .bdo-pri { color: var(--text); font-weight: 600; }
-        .bdo-empty { text-align: center; color: var(--text3); padding: 20px; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
-        .bdo-view-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 7px; background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: 'JetBrains Mono', monospace; }
-        .bdo-view-btn:hover { border-color: var(--warning); color: var(--warning); }
-
-        /* ── ACTION BUTTONS ── */
-        .action-row { display: flex; gap: 5px; flex-wrap: wrap; }
-        .act-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; font-family: 'JetBrains Mono', monospace; }
-        .act-followup { background: rgba(167,139,250,0.1); color: var(--purple); border-color: rgba(167,139,250,0.2); }
-        .act-followup:hover { background: rgba(167,139,250,0.18); }
-        .act-walkin { background: rgba(6,182,212,0.1); color: var(--teal); border-color: rgba(6,182,212,0.2); }
-        .act-walkin:hover { background: rgba(6,182,212,0.18); }
-        .act-done { background: rgba(0,212,170,0.1); color: var(--success); border-color: rgba(0,212,170,0.2); }
-        .act-done:hover { background: rgba(0,212,170,0.18); }
-        .act-invalid { background: rgba(255,71,87,0.1); color: var(--danger); border-color: rgba(255,71,87,0.2); }
-        .act-invalid:hover { background: rgba(255,71,87,0.18); }
-
-        /* Animations */
-        @keyframes fadeInUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        .fade-in { animation: fadeInUp 0.25s ease forwards; }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+        .bdo-root.dark{--bg:#07080f;--bg2:#0d0f1a;--bg3:#12152a;--surface:#161929;--surface2:#1c2038;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);--accent:#3d7fff;--success:#00d4aa;--warning:#f59e0b;--danger:#ff4757;--purple:#a78bfa;--orange:#ff6b35;--teal:#06b6d4;--text:#e8eaf6;--text2:#8892b0;--text3:#4a5568;}
+        .bdo-root.light{--bg:#f4f5fa;--bg2:#ffffff;--bg3:#eef0f7;--surface:#ffffff;--surface2:#eef0f7;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.12);--accent:#2563eb;--success:#059669;--warning:#d97706;--danger:#dc2626;--purple:#7c3aed;--orange:#ea580c;--teal:#0891b2;--text:#0f172a;--text2:#475569;--text3:#94a3b8;}
+        .bdo-root{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+        .bdo-layout{display:flex;min-height:100vh;}
+        .bdo-sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden;}
+        .bdo-sidebar::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--warning),var(--orange),transparent);}
+        .bdo-brand{padding:22px 20px 16px;border-bottom:1px solid var(--border);}
+        .bdo-brand-tag{font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--warning);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+        .bdo-brand-name{font-size:17px;font-weight:800;color:var(--text);line-height:1.2;}
+        .bdo-user{margin:12px 18px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px;display:flex;align-items:center;gap:9px;}
+        .bdo-user-ava{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--warning),var(--orange));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+        .bdo-user-name{font-size:12px;font-weight:600;color:var(--text);}
+        .bdo-user-role{font-size:9px;color:var(--warning);font-family:'JetBrains Mono',monospace;letter-spacing:1px;}
+        .bdo-nav-section{padding:6px 12px;margin-top:2px;}
+        .bdo-nav-label{font-size:9px;font-weight:600;letter-spacing:2.5px;color:var(--text3);text-transform:uppercase;font-family:'JetBrains Mono',monospace;padding:0 8px;margin-bottom:3px;}
+        .bdo-nav-item{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:9px;cursor:pointer;transition:all 0.15s;font-size:12px;font-weight:500;color:var(--text2);position:relative;margin-bottom:1px;}
+        .bdo-nav-item:hover{background:var(--surface2);color:var(--text);}
+        .bdo-nav-item.active{background:var(--surface2);color:var(--warning);}
+        .bdo-nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--warning);border-radius:0 3px 3px 0;}
+        .bdo-nav-icon{width:16px;height:16px;opacity:0.6;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+        .bdo-nav-item.active .bdo-nav-icon{opacity:1;}
+        .bdo-nav-badge{margin-left:auto;font-size:9px;font-weight:700;background:var(--danger);color:#fff;padding:1px 6px;border-radius:8px;font-family:'JetBrains Mono',monospace;}
+        .bdo-nav-badge.info{background:var(--warning);}
+        .bdo-sidebar-foot{margin-top:auto;padding:12px 18px;border-top:1px solid var(--border);}
+        .bdo-status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:5px;animation:pdot 2s infinite;}
+        @keyframes pdot{0%,100%{opacity:1}50%{opacity:0.3}}
+        .bdo-footer-info{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:10px;}
+        .bdo-theme-toggle{display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:18px;padding:3px;margin-bottom:8px;cursor:pointer;}
+        .bdo-toggle-opt{display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:13px;font-size:10px;font-weight:600;color:var(--text3);transition:all 0.2s;font-family:'JetBrains Mono',monospace;flex:1;justify-content:center;}
+        .bdo-toggle-opt.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+        .bdo-logout-btn{display:flex;align-items:center;gap:7px;width:100%;padding:8px 11px;border-radius:8px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;background:var(--surface);border:1px solid var(--border);transition:all 0.15s;font-family:inherit;}
+        .bdo-main{flex:1;overflow:auto;padding:26px 28px 60px;}
+        .bdo-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+        .bdo-page-title{font-size:22px;font-weight:800;letter-spacing:-0.5px;color:var(--text);}
+        .bdo-page-sub{font-size:10px;color:var(--text2);margin-top:2px;font-family:'JetBrains Mono',monospace;}
+        .bdo-clock{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);background:var(--surface);border:1px solid var(--border);padding:6px 12px;border-radius:7px;}
+        .period-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:18px;}
+        .period-btn{padding:5px 13px;border-radius:7px;border:1px solid var(--border2);cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);background:var(--surface);transition:all 0.15s;font-family:'JetBrains Mono',monospace;}
+        .period-btn.active{border-color:var(--warning);color:var(--warning);background:rgba(245,158,11,0.08);}
+        .period-date{background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:5px 9px;color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace;outline:none;}
+        .period-label{font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+        .period-range-badge{font-size:10px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:4px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;}
+        .alert-list{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;}
+        .alert-item{display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:9px;position:relative;overflow:hidden;}
+        .alert-warn{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);}
+        .alert-info{background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.18);}
+        .alert-warn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--warning);}
+        .alert-info::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--teal);}
+        .alert-msg{font-size:12px;color:var(--text);flex:1;}
+        .alert-dismiss{font-size:10px;color:var(--text3);cursor:pointer;font-family:'JetBrains Mono',monospace;padding:2px 8px;border:1px solid var(--border2);border-radius:5px;background:transparent;}
+        .alert-go{font-size:10px;cursor:pointer;font-family:'JetBrains Mono',monospace;padding:2px 8px;border-radius:5px;background:transparent;border:1px solid;}
+        .alert-warn .alert-go{color:var(--warning);border-color:rgba(245,158,11,0.3);}
+        .alert-info .alert-go{color:var(--teal);border-color:rgba(6,182,212,0.3);}
+        .kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px;}
+        .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 14px;transition:transform 0.15s;}
+        .kpi-card:hover{transform:translateY(-2px);}
+        .kpi-label{font-size:9px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--text2);font-family:'JetBrains Mono',monospace;margin-bottom:7px;}
+        .kpi-val{font-size:32px;font-weight:800;line-height:1;margin-bottom:6px;}
+        .kpi-spark{display:flex;justify-content:flex-end;margin-top:6px;}
+        .bdo-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px;}
+        .bdo-card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1px solid var(--border);}
+        .bdo-card-title{font-size:12px;font-weight:700;color:var(--text);}
+        .bdo-card-sub{font-size:10px;color:var(--text2);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+        .bdo-card-body{padding:14px 16px;}
+        .two-col{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;margin-bottom:14px;}
+        .bdo-table{width:100%;border-collapse:collapse;font-size:11px;}
+        .bdo-table th{padding:8px 10px;text-align:left;font-size:9px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--text3);font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--border);}
+        .bdo-td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+        .bdo-table tr:last-child .bdo-td{border-bottom:none;}
+        .bdo-table tbody tr:hover{background:var(--surface2);}
+        .bdo-pri{color:var(--text);font-weight:600;}
+        .bdo-empty{text-align:center;color:var(--text3);padding:20px;font-size:10px;font-family:'JetBrains Mono',monospace;}
+        .act-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all 0.15s;font-family:'JetBrains Mono',monospace;}
+        .act-followup{background:rgba(167,139,250,0.1);color:var(--purple);border-color:rgba(167,139,250,0.2);}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .fade-in{animation:fadeInUp 0.25s ease forwards;}
+        ::-webkit-scrollbar{width:4px;height:4px;}
+        ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
       `}</style>
 
       <div className={`bdo-root ${theme}`}>
         <div className="bdo-layout">
-
-          {/* ── SIDEBAR ── */}
           <aside className="bdo-sidebar">
             <div className="bdo-brand">
               <div className="bdo-brand-tag">CRM · BDO Portal</div>
@@ -443,12 +548,12 @@ export default function BDODashboard() {
             <div className="bdo-nav-section">
               <div className="bdo-nav-label">Dashboard</div>
               {([
-                { id: 'overview', label: 'Overview',      icon: I.overview },
-                { id: 'pending',  label: 'Pending',       icon: I.pending,  badge: pendingMeetings.length > 0 ? pendingMeetings.length : null, badgeCls: '' },
-                { id: 'followup', label: 'Follow-up',     icon: I.followup, badge: followUpMeetings.length > 0 ? followUpMeetings.length : null, badgeCls: 'info' },
-                { id: 'history',  label: 'All Meetings',  icon: I.history },
+                { id: 'overview', label: 'Overview', icon: I.overview },
+                { id: 'pending', label: 'Pending', icon: I.pending, badge: pendingMeetings.length > 0 ? pendingMeetings.length : null },
+                { id: 'followup', label: 'Follow-up', icon: I.followup, badge: followUpMeetings.length > 0 ? followUpMeetings.length : null, badgeCls: 'info' },
+                { id: 'history', label: 'All Meetings', icon: I.history },
               ] as any[]).map(item => (
-                <div key={item.id} className={`bdo-nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => setActiveTab(item.id)}>
+                <div key={item.id} className={`bdo-nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => { setActiveTab(item.id); setExpandedMeeting(null); }}>
                   <div className="bdo-nav-icon">{item.icon}</div>
                   {item.label}
                   {item.badge ? <span className={`bdo-nav-badge ${item.badgeCls || ''}`}>{item.badge}</span> : null}
@@ -468,12 +573,9 @@ export default function BDODashboard() {
             </div>
           </aside>
 
-          {/* ── MAIN ── */}
           <main className="bdo-main">
-
-            {/* ── Period filter (shown on all tabs) ── */}
             <div className="period-row">
-              {(['daily','weekly','monthly','custom'] as Period[]).map(p => (
+              {(['daily', 'weekly', 'monthly', 'custom'] as Period[]).map(p => (
                 <button key={p} className={`period-btn ${period === p ? 'active' : ''}`} onClick={() => setPeriod(p)}>
                   {p.charAt(0).toUpperCase() + p.slice(1)}
                 </button>
@@ -489,7 +591,6 @@ export default function BDODashboard() {
               <span className="period-range-badge">{from} → {to}</span>
             </div>
 
-            {/* ── Alerts ── */}
             {visibleAlerts.length > 0 && (
               <div className="alert-list">
                 {visibleAlerts.map(alert => (
@@ -503,7 +604,7 @@ export default function BDODashboard() {
               </div>
             )}
 
-            {/* ════ OVERVIEW ════ */}
+            {/* OVERVIEW */}
             {activeTab === 'overview' && (
               <div className="fade-in">
                 <div className="bdo-topbar">
@@ -513,15 +614,13 @@ export default function BDODashboard() {
                   </div>
                   <div className="bdo-clock">{clock}</div>
                 </div>
-
-                {/* KPI Row */}
                 <div className="kpi-row">
                   {[
-                    { label: 'Total Meetings', val: stats.total,       color: 'var(--warning)' },
-                    { label: 'Pending Action', val: stats.pending,     color: 'var(--danger)' },
-                    { label: 'Follow-up',      val: stats.followup,    color: 'var(--purple)' },
-                    { label: 'Walk-in Done',   val: stats.walkInDone,  color: 'var(--teal)' },
-                  ].map((k, ki) => (
+                    { label: 'Total Meetings', val: stats.total, color: 'var(--warning)' },
+                    { label: 'Pending Action', val: stats.pending, color: 'var(--danger)' },
+                    { label: 'Follow-up', val: followUpMeetings.length, color: 'var(--purple)' },
+                    { label: 'Walk-in Done', val: allMyMeetings.filter(m => m.walkinDone).length, color: 'var(--teal)' },
+                  ].map((k) => (
                     <div key={k.label} className="kpi-card">
                       <div className="kpi-label">{k.label}</div>
                       <div className="kpi-val" style={{ color: k.color }}>{k.val}</div>
@@ -529,9 +628,7 @@ export default function BDODashboard() {
                     </div>
                   ))}
                 </div>
-
                 <div className="two-col">
-                  {/* Meeting status donut */}
                   <div className="bdo-card">
                     <div className="bdo-card-head">
                       <div>
@@ -541,167 +638,82 @@ export default function BDODashboard() {
                     </div>
                     <div className="bdo-card-body">
                       <DonutChart segments={[
-                        { label: 'Pending Action', value: stats.pending,      color: 'var(--danger)' },
-                        { label: 'Follow-up',      value: stats.followup,     color: 'var(--purple)' },
-                        { label: 'Walk-in Done',   value: stats.walkInDone,   color: 'var(--teal)' },
-                        { label: 'Walk-in Invalid',value: stats.walkInInvalid, color: 'var(--orange)' },
-                        { label: 'Not Done',       value: stats.notDone,      color: '#ff4757' },
-                        { label: 'Scheduled',      value: stats.scheduled,    color: 'var(--accent)' },
+                        { label: 'Pending Action', value: stats.pending, color: 'var(--danger)' },
+                        { label: 'Follow-up', value: stats.followup, color: 'var(--purple)' },
+                        { label: 'Walk-in Date Set', value: allMyMeetings.filter(m => m.walkinDate).length, color: 'var(--teal)' },
+                        { label: 'Not Done', value: stats.notDone, color: '#ff4757' },
+                        { label: 'Scheduled', value: stats.scheduled, color: 'var(--accent)' },
                       ]} />
                     </div>
                   </div>
-
-                  {/* Walk-in bar chart */}
                   <div className="bdo-card">
                     <div className="bdo-card-head">
                       <div>
-                        <div className="bdo-card-title">Walk-in activity</div>
-                        <div className="bdo-card-sub">// period breakdown</div>
+                        <div className="bdo-card-title">Today's meetings</div>
+                        <div className="bdo-card-sub">// {todayStr}</div>
                       </div>
                     </div>
                     <div className="bdo-card-body">
-                      <BarChart
-                        data={[
-                          { label: 'Total', value: stats.walkInTotal },
-                          { label: 'Done',  value: stats.walkInDone },
-                          { label: 'Invalid', value: stats.walkInInvalid },
-                          { label: 'Pending',  value: stats.walkInTotal - stats.walkInDone - stats.walkInInvalid },
-                        ]}
-                        colors={['var(--warning)', 'var(--teal)', 'var(--danger)', 'var(--purple)']}
-                      />
-                      <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                        {[
-                          { l: 'Walk-in rate', v: `${stats.total > 0 ? Math.round(stats.walkInTotal/stats.total*100) : 0}%`, c: 'var(--warning)' },
-                          { l: 'Done rate',    v: `${stats.walkInTotal > 0 ? Math.round(stats.walkInDone/stats.walkInTotal*100) : 0}%`, c: 'var(--teal)' },
-                        ].map(item => (
-                          <div key={item.l} style={{ background: 'var(--bg3)', borderRadius: '7px', padding: '8px 10px', border: '1px solid var(--border)' }}>
-                            <div style={{ fontSize: '9px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", marginBottom: '3px' }}>{item.l.toUpperCase()}</div>
-                            <div style={{ fontSize: '18px', fontWeight: 700, color: item.c, fontFamily: "'JetBrains Mono', monospace" }}>{item.v}</div>
-                          </div>
-                        ))}
-                      </div>
+                      {allMyMeetings.filter(m => m.date === today).length === 0
+                        ? <div style={{ textAlign: 'center', color: 'var(--text3)', fontSize: '11px', padding: '16px 0' }}>No meetings today</div>
+                        : allMyMeetings.filter(m => m.date === today).map(m => {
+                          const lead = leads.find(l => l.id === m.leadId);
+                          return (
+                            <div key={m.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <div style={{ fontWeight: 600, fontSize: '12px' }}>{lead?.clientName}</div>
+                                <div style={{ fontSize: '10px', color: 'var(--text3)' }}>{m.timeSlot}</div>
+                              </div>
+                              <StatusBadge status={m.status} />
+                            </div>
+                          );
+                        })
+                      }
                     </div>
                   </div>
-                </div>
-
-                {/* Activity trend */}
-                <div className="bdo-card">
-                  <div className="bdo-card-head">
-                    <div>
-                      <div className="bdo-card-title">Activity trend</div>
-                      <div className="bdo-card-sub">// daily meeting count · {dailyTrend.length} days</div>
-                    </div>
-                    <span style={{ fontSize: '10px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace' " }}>Peak: {Math.max(...dailyTrend)} · Avg: {dailyTrend.length ? (dailyTrend.reduce((a,b) => a+b,0)/dailyTrend.length).toFixed(1) : 0}</span>
-                  </div>
-                  <div className="bdo-card-body" style={{ paddingBottom: '10px' }}>
-                    {/* Full-width trend chart */}
-                    <div style={{ height: '70px', position: 'relative' }}>
-                      {(() => {
-                        const data = dailyTrend;
-                        const max = Math.max(...data, 1);
-                        const W = 600, H = 60;
-                        const pts = data.map((v, i) => `${(i/(data.length-1||1))*W},${H-(v/max)*(H-6)-3}`).join(' ');
-                        const area = `0,${H} ${pts} ${W},${H}`;
-                        return (
-                          <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="70" preserveAspectRatio="none" style={{ display: 'block' }}>
-                            <defs>
-                              <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="var(--warning)" stopOpacity="0.2"/>
-                                <stop offset="100%" stopColor="var(--warning)" stopOpacity="0"/>
-                              </linearGradient>
-                            </defs>
-                            <polygon points={area} fill="url(#trendGrad)" />
-                            <polyline points={pts} fill="none" stroke="var(--warning)" strokeWidth="2" strokeLinejoin="round" />
-                            {data.map((v, i) => <circle key={i} cx={(i/(data.length-1||1))*W} cy={H-(v/max)*(H-6)-3} r="3" fill="var(--warning)" />)}
-                          </svg>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Today's meetings */}
-                <div className="bdo-card">
-                  <div className="bdo-card-head">
-                    <div>
-                      <div className="bdo-card-title">Today's meetings</div>
-                      <div className="bdo-card-sub">// {todayStr}</div>
-                    </div>
-                    <span style={{ fontSize: '10px', background: 'rgba(245,158,11,0.1)', color: 'var(--warning)', padding: '2px 8px', borderRadius: '5px', fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, border: '1px solid rgba(245,158,11,0.2)' }}>
-                      {allMyMeetings.filter((m: Meeting) => m.date === today).length} today
-                    </span>
-                  </div>
-                  <table className="bdo-table">
-                    <thead><tr><th>Client</th><th>Time</th><th>BDM</th><th>Type</th><th>Status</th><th>Action</th></tr></thead>
-                    <tbody>
-                      {allMyMeetings.filter((m: Meeting) => m.date === today).map((m: Meeting) => renderMeetingRow(m, true))}
-                      {allMyMeetings.filter((m: Meeting) => m.date === today).length === 0 && <tr><td colSpan={6} className="bdo-empty">No meetings today</td></tr>}
-                    </tbody>
-                  </table>
                 </div>
               </div>
             )}
 
-            {/* ════ PENDING ════ */}
+            {/* PENDING */}
             {activeTab === 'pending' && (
               <div className="fade-in">
                 <div className="bdo-topbar">
                   <div>
                     <div className="bdo-page-title">Pending Meetings</div>
-                    <div className="bdo-page-sub">// {pendingMeetings.length} meetings awaiting your action</div>
+                    <div className="bdo-page-sub">// {pendingMeetings.length} meetings · click row to expand</div>
                   </div>
                   <div className="bdo-clock">{clock}</div>
                 </div>
-
                 {pendingMeetings.length === 0 ? (
-                  <div className="bdo-card">
-                    <div className="bdo-card-body" style={{ textAlign: 'center', padding: '48px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px' }}>
-                      all caught up — no pending meetings
-                    </div>
-                  </div>
+                  <div className="bdo-card"><div className="bdo-card-body" style={{ textAlign: 'center', padding: '48px', color: 'var(--text3)', fontSize: '12px' }}>all caught up — no pending meetings</div></div>
                 ) : (
                   <div className="bdo-card">
                     <div className="bdo-card-head">
                       <div className="bdo-card-title">Action required ({pendingMeetings.length})</div>
+                      <div className="bdo-card-sub" style={{ marginTop: 0 }}>click row to expand · set walk-in · add remarks</div>
                     </div>
                     <table className="bdo-table">
-                      <thead><tr><th>Client</th><th>Date · Time</th><th>Phone</th><th>BDM</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+                      <thead>
+                        <tr>
+                          <th>Client</th><th>Date · Time</th><th>Phone</th><th>BDM</th>
+                          <th>Type</th><th>Status</th><th>Walk-in Date</th>
+                          <th>
+                            <button
+                              className="act-btn act-followup"
+                              style={{ fontSize: '9px', padding: '3px 8px' }}
+                              onClick={async () => {
+                                for (const m of pendingMeetings) await handleFollowUp(m.id);
+                                toast.success('All marked as Follow-up');
+                              }}
+                            >
+                              All → Follow-up
+                            </button>
+                          </th>
+                        </tr>
+                      </thead>
                       <tbody>
-                        {pendingMeetings.map((m: Meeting) => {
-                          const lead = leads.find((l: any) => l.id === m.leadId);
-                          const bdm  = users.find((u: any) => u.id === m.bdmId);
-                          return (
-                            <tr key={m.id}>
-                              <td className="bdo-td bdo-pri">
-                                <div>{m.clientName || lead?.clientName || '—'}</div>
-                                <div style={{ fontSize: '10px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>₹{lead?.loanRequirement}</div>
-                              </td>
-                              <td className="bdo-td">
-                                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px' }}>{m.date}</div>
-                                <div style={{ fontSize: '10px', color: 'var(--warning)', fontFamily: "'JetBrains Mono', monospace" }}>{m.timeSlot}</div>
-                              </td>
-                              <td className="bdo-td" style={{ fontSize: '11px', color: 'var(--text2)' }}>{lead?.phoneNumber || '—'}</td>
-                              <td className="bdo-td" style={{ fontSize: '11px' }}>{bdm?.name || '—'}</td>
-                              <td className="bdo-td">
-                                <span style={{ fontSize: '10px', background: 'var(--surface2)', color: 'var(--text2)', padding: '2px 7px', borderRadius: '4px', fontFamily: "'JetBrains Mono', monospace" }}>{m.meetingType}</span>
-                              </td>
-                              <td className="bdo-td"><StatusBadge status={m.status} /></td>
-                              <td className="bdo-td">
-                                <div className="action-row">
-                                  <button className="act-btn act-followup" onClick={() => handleFollowUp(m.id)}>
-                                    {I.followup} Follow-up
-                                  </button>
-                                  <button className="act-btn act-walkin" onClick={() => setInfoMeeting(m)}>
-                                    {I.walk} Walk-in
-                                  </button>
-                                  <button className="bdo-view-btn" onClick={() => setInfoMeeting(m)}>
-                                    {I.eye} View
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                        {pendingMeetings.map((m: Meeting) => renderMeetingRow(m))}
                       </tbody>
                     </table>
                   </div>
@@ -709,82 +721,28 @@ export default function BDODashboard() {
               </div>
             )}
 
-            {/* ════ FOLLOW-UP ════ */}
+            {/* FOLLOW-UP */}
             {activeTab === 'followup' && (
               <div className="fade-in">
                 <div className="bdo-topbar">
                   <div>
                     <div className="bdo-page-title">Follow-up Meetings</div>
-                    <div className="bdo-page-sub">// {followUpMeetings.length} follow-ups · set walk-in dates · mark outcomes</div>
+                    <div className="bdo-page-sub">// {followUpMeetings.length} follow-ups · click row to expand</div>
                   </div>
                   <div className="bdo-clock">{clock}</div>
                 </div>
-
                 {followUpMeetings.length === 0 ? (
-                  <div className="bdo-card">
-                    <div className="bdo-card-body" style={{ textAlign: 'center', padding: '48px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px' }}>
-                      no follow-up meetings
-                    </div>
-                  </div>
+                  <div className="bdo-card"><div className="bdo-card-body" style={{ textAlign: 'center', padding: '48px', color: 'var(--text3)', fontSize: '12px' }}>no follow-up meetings</div></div>
                 ) : (
                   <div className="bdo-card">
                     <div className="bdo-card-head">
-                      <div className="bdo-card-title">Follow-up action required ({followUpMeetings.length})</div>
+                      <div className="bdo-card-title">Follow-up ({followUpMeetings.length})</div>
+                      <div className="bdo-card-sub" style={{ marginTop: 0 }}>click row to expand · set walk-in date · mark done or invalid</div>
                     </div>
                     <table className="bdo-table">
-                      <thead><tr><th>Client</th><th>Date · Time</th><th>Phone</th><th>BDM</th><th>Walk-in Date</th><th>Walk-in Status</th><th>Actions</th></tr></thead>
+                      <thead><tr><th>Client</th><th>Date · Time</th><th>Phone</th><th>BDM</th><th>Type</th><th>Status</th><th>Walk-in Date</th><th></th></tr></thead>
                       <tbody>
-                        {followUpMeetings.map((m: Meeting) => {
-                          const lead = leads.find((l: any) => l.id === m.leadId);
-                          const bdm  = users.find((u: any) => u.id === m.bdmId);
-                          const walkinDate = walkinDateMap[m.id] || m.walkinDate || '';
-                          const isOverdue = walkinDate && walkinDate < today;
-                          return (
-                            <tr key={m.id} style={{ background: isOverdue ? 'rgba(255,71,87,0.04)' : undefined }}>
-                              <td className="bdo-td bdo-pri">
-                                <div>{m.clientName || lead?.clientName || '—'}</div>
-                                <div style={{ fontSize: '10px', color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>₹{lead?.loanRequirement}</div>
-                              </td>
-                              <td className="bdo-td">
-                                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px' }}>{m.date}</div>
-                                <div style={{ fontSize: '10px', color: 'var(--warning)', fontFamily: "'JetBrains Mono', monospace" }}>{m.timeSlot}</div>
-                              </td>
-                              <td className="bdo-td" style={{ fontSize: '11px', color: 'var(--text2)' }}>{lead?.phoneNumber || '—'}</td>
-                              <td className="bdo-td" style={{ fontSize: '11px' }}>{bdm?.name || '—'}</td>
-                              <td className="bdo-td">
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <input
-                                    type="date"
-                                    value={walkinDate}
-                                    onChange={e => handleSetWalkinDate(m.id, e.target.value)}
-                                    style={{ background: 'var(--bg3)', border: `1px solid ${isOverdue ? 'var(--danger)' : 'var(--border2)'}`, borderRadius: '6px', padding: '4px 7px', color: 'var(--text)', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace", outline: 'none', width: '130px' }}
-                                  />
-                                  {isOverdue && <span style={{ fontSize: '9px', color: 'var(--danger)', fontFamily: "'JetBrains Mono', monospace" }}>⚠ Overdue</span>}
-                                </div>
-                              </td>
-                              <td className="bdo-td">
-                                {m.walkingStatus
-                                  ? <StatusBadge status={m.walkingStatus} />
-                                  : <span style={{ color: 'var(--text3)', fontSize: '10px', fontFamily: "'JetBrains Mono', monospace" }}>Not set</span>}
-                              </td>
-                              <td className="bdo-td">
-                                <div className="action-row">
-                                  {!m.walkingStatus && walkinDate && (
-                                    <button className="act-btn act-done" onClick={() => handleWalkingDone(m)}>
-                                      {I.check} Walk Done
-                                    </button>
-                                  )}
-                                  <button className="act-btn act-invalid" onClick={() => handleWalkingInvalid(m.id)}>
-                                    {I.invalid} Invalid
-                                  </button>
-                                  <button className="bdo-view-btn" onClick={() => setInfoMeeting(m)}>
-                                    {I.eye} View
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                        {followUpMeetings.map((m: Meeting) => renderMeetingRow(m))}
                       </tbody>
                     </table>
                   </div>
@@ -792,24 +750,22 @@ export default function BDODashboard() {
               </div>
             )}
 
-            {/* ════ HISTORY ════ */}
+            {/* HISTORY */}
             {activeTab === 'history' && (
               <div className="fade-in">
                 <div className="bdo-topbar">
                   <div>
                     <div className="bdo-page-title">All Meetings</div>
-                    <div className="bdo-page-sub">// {filteredMeetings.length} meetings · {from} → {to}</div>
+                    <div className="bdo-page-sub">// {filteredMeetings.length} meetings · click row to expand</div>
                   </div>
                   <div className="bdo-clock">{clock}</div>
                 </div>
-
-                {/* Summary cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: '10px', marginBottom: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: '10px', marginBottom: '14px' }}>
                   {[
-                    { l: 'Total',         v: stats.total,         c: 'var(--warning)' },
-                    { l: 'Walk-in Done',  v: stats.walkInDone,    c: 'var(--teal)' },
-                    { l: 'Walk-in Invalid',v: stats.walkInInvalid, c: 'var(--danger)' },
-                    { l: 'Not Done',      v: stats.notDone,       c: 'var(--danger)' },
+                    { l: 'Total', v: stats.total, c: 'var(--warning)' },
+                    { l: 'Follow-up', v: stats.followup, c: 'var(--purple)' },
+                    { l: 'Walk-in Date Set', v: filteredMeetings.filter(m => m.walkinDate).length, c: 'var(--teal)' },
+                    { l: 'Not Done', v: stats.notDone, c: 'var(--danger)' },
                   ].map(k => (
                     <div key={k.l} className="kpi-card" style={{ padding: '13px' }}>
                       <div className="kpi-label">{k.l}</div>
@@ -817,70 +773,24 @@ export default function BDODashboard() {
                     </div>
                   ))}
                 </div>
-
                 <div className="bdo-card">
-                  <div className="bdo-card-head"><div className="bdo-card-title">Meeting history ({filteredMeetings.length})</div></div>
+                  <div className="bdo-card-head">
+                    <div className="bdo-card-title">Meeting history ({filteredMeetings.length})</div>
+                    <div className="bdo-card-sub" style={{ marginTop: 0 }}>click row to expand details</div>
+                  </div>
                   <table className="bdo-table">
-                    <thead><tr><th>Client</th><th>Date · Time</th><th>Phone</th><th>BDM</th><th>Type</th><th>Status</th><th>Walk-in Status</th><th>Walk-in Date</th><th>Action</th></tr></thead>
+                    <thead><tr><th>Client</th><th>Date · Time</th><th>Phone</th><th>BDM</th><th>Type</th><th>Status</th><th>Walk-in Date</th><th></th></tr></thead>
                     <tbody>
-                      {filteredMeetings.slice().sort((a: Meeting, b: Meeting) => b.date.localeCompare(a.date)).map((m: Meeting) => {
-                        const lead = leads.find((l: any) => l.id === m.leadId);
-                        const bdm  = users.find((u: any) => u.id === m.bdmId);
-                        return (
-                          <tr key={m.id}>
-                            <td className="bdo-td bdo-pri">
-                              <div>{m.clientName || lead?.clientName}</div>
-                              <div style={{ fontSize: '10px', color: 'var(--accent)', fontFamily: "'JetBrains Mono', monospace" }}>₹{lead?.loanRequirement}</div>
-                            </td>
-                            <td className="bdo-td">
-                              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px' }}>{m.date}</div>
-                              <div style={{ fontSize: '10px', color: 'var(--warning)', fontFamily: "'JetBrains Mono', monospace" }}>{m.timeSlot}</div>
-                            </td>
-                            <td className="bdo-td" style={{ fontSize: '11px', color: 'var(--text2)' }}>{lead?.phoneNumber || '—'}</td>
-                            <td className="bdo-td" style={{ fontSize: '11px' }}>{bdm?.name || '—'}</td>
-                            <td className="bdo-td">
-                              <span style={{ fontSize: '10px', background: 'var(--surface2)', color: 'var(--text2)', padding: '2px 7px', borderRadius: '4px', fontFamily: "'JetBrains Mono', monospace" }}>{m.meetingType}</span>
-                            </td>
-                            <td className="bdo-td">
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                <StatusBadge status={m.status} />
-                                {m.bdoStatus && <StatusBadge status={m.bdoStatus} />}
-                              </div>
-                            </td>
-                            <td className="bdo-td">
-                              {m.walkingStatus ? <StatusBadge status={m.walkingStatus} /> : <span style={{ color: 'var(--text3)', fontSize: '10px' }}>—</span>}
-                            </td>
-                            <td className="bdo-td" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: 'var(--text3)' }}>
-                              {m.walkinDate || '—'}
-                            </td>
-                            <td className="bdo-td">
-                              <button className="bdo-view-btn" onClick={() => setInfoMeeting(m)}>{I.eye} View</button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                      {filteredMeetings.length === 0 && <tr><td colSpan={9} className="bdo-empty">No meetings in this period</td></tr>}
+                      {filteredMeetings.slice().sort((a, b) => b.date.localeCompare(a.date)).map((m: Meeting) => renderMeetingRow(m))}
+                      {filteredMeetings.length === 0 && <tr><td colSpan={8} className="bdo-empty">No meetings in this period</td></tr>}
                     </tbody>
                   </table>
                 </div>
               </div>
             )}
-
           </main>
         </div>
       </div>
-
-      {/* ── Meeting Detail Dialog ── */}
-      <MeetingDetailDialog
-        isOpen={!!infoMeeting}
-        meeting={infoMeeting}
-        onClose={() => setInfoMeeting(null)}
-        onHandleConverted={() => {}}
-        onHandleFollowUp={handleFollowUp}
-        onHandleSetWalkinDate={handleSetWalkinDate}
-        onHandleWalkingDone={handleWalkingDone}
-        onHandleWalkingInvalid={handleWalkingInvalid}
-      />
     </>
   );
 }
