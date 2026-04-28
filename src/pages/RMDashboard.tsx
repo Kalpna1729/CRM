@@ -329,7 +329,7 @@ export default function RMDashboard() {
                       return (
                         <div key={r.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: '12px' }}>{m?.clientName || lead?.clientName || '—'}</div>
+                            <div style={{ fontWeight: 600, fontSize: '12px' }}>{lead?.clientName || '—'}</div>
                             <div style={{ fontSize: '11px', color: 'var(--text2)', marginTop: '2px' }}>{r.remark}</div>
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
@@ -373,7 +373,7 @@ export default function RMDashboard() {
                         >
                           <PriorityDot priority={m.rmPriority} />
                           <div style={{ flex: 2 }}>
-                            <div style={{ fontWeight: 700, fontSize: '13px' }}>{m.clientName || lead?.clientName || '—'}</div>
+                            <div style={{ fontWeight: 700, fontSize: '13px' }}>{lead?.clientName || lead?.clientName || '—'}</div>
                             <div style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace' }}>{lead?.phoneNumber || '—'} · ₹{lead?.loanRequirement || '—'}</div>
                           </div>
                           <div style={{ flex: 1 }}>
@@ -544,7 +544,7 @@ export default function RMDashboard() {
                       return (
                         <div key={r.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: '12px' }}>{m?.clientName || lead?.clientName || '—'}</div>
+                            <div style={{ fontWeight: 600, fontSize: '12px' }}>{lead?.clientName || lead?.clientName || '—'}</div>
                             <div style={{ fontSize: '11px', color: 'var(--text2)' }}>{r.remark}</div>
                             <div style={{ fontSize: '10px', color: 'var(--danger)', fontFamily: 'monospace', marginTop: '2px' }}>Due: {r.reminderDate}</div>
                           </div>
@@ -569,7 +569,7 @@ export default function RMDashboard() {
                       return (
                         <div key={r.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: '12px' }}>{m?.clientName || lead?.clientName || '—'}</div>
+                            <div style={{ fontWeight: 600, fontSize: '12px' }}>{lead?.clientName || lead?.clientName || '—'}</div>
                             <div style={{ fontSize: '11px', color: 'var(--text2)' }}>{r.remark}</div>
                             <div style={{ fontSize: '10px', color: 'var(--accent)', fontFamily: 'monospace', marginTop: '2px' }}>{r.reminderDate}</div>
                           </div>
@@ -617,7 +617,7 @@ export default function RMDashboard() {
                         const lead = getLead(m.leadId);
                         return (
                           <tr key={m.id}>
-                            <td className="rm-td rm-pri">{m.clientName || lead?.clientName || '—'}</td>
+                            <td className="rm-td rm-pri">{lead?.clientName || lead?.clientName || '—'}</td>
                             <td className="rm-td" style={{ fontFamily: 'monospace', fontSize: '11px' }}>{lead?.phoneNumber || '—'}</td>
                             <td className="rm-td" style={{ fontSize: '11px' }}>₹{lead?.loanRequirement || '—'}</td>
                             <td className="rm-td">{m.caseStage ? <StageBadge stage={m.caseStage} /> : <span style={{ color: 'var(--text3)', fontSize: '10px' }}>—</span>}</td>

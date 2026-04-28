@@ -174,21 +174,40 @@ export default function TCDashboard() {
     return Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).slice(-30);
   }, [teamMeetings]);
 
+  // const stateMap = useMemo(() => {
+  //   const map: Record<string, { total: number; pending: number; rejected: number; products: Record<string, number> }> = {};
+  //   teamMeetings.forEach(m => {
+  //     const s = m.state || 'Unknown';
+  //     if (!map[s]) map[s] = { total: 0, pending: 0, rejected: 0, products: {} };
+  //     map[s].total++;
+  //     if (m.status === 'Pending' || m.status === 'Scheduled') map[s].pending++;
+  //     if (m.status === 'Reject' || m.status === 'Not Done') map[s].rejected++;
+  //     if (m.productType) map[s].products[m.productType] = (map[s].products[m.productType] || 0) + 1;
+  //   });
+  //   return Object.entries(map).sort(([, a], [, b]) => b.total - a.total).slice(0, 8).map(([state, data]) => ({
+  //     state, ...data,
+  //     topProduct: Object.entries(data.products).sort(([, a], [, b]) => b - a)[0]?.[0] || '—',
+  //   }));
+  // }, [teamMeetings]);
+
+
   const stateMap = useMemo(() => {
-    const map: Record<string, { total: number; pending: number; rejected: number; products: Record<string, number> }> = {};
-    teamMeetings.forEach(m => {
-      const s = m.state || 'Unknown';
-      if (!map[s]) map[s] = { total: 0, pending: 0, rejected: 0, products: {} };
-      map[s].total++;
-      if (m.status === 'Pending' || m.status === 'Scheduled') map[s].pending++;
-      if (m.status === 'Reject' || m.status === 'Not Done') map[s].rejected++;
-      if (m.productType) map[s].products[m.productType] = (map[s].products[m.productType] || 0) + 1;
-    });
-    return Object.entries(map).sort(([, a], [, b]) => b.total - a.total).slice(0, 8).map(([state, data]) => ({
-      state, ...data,
-      topProduct: Object.entries(data.products).sort(([, a], [, b]) => b - a)[0]?.[0] || '—',
-    }));
-  }, [teamMeetings]);
+  const map: Record<string, { total: number; pending: number; rejected: number; products: Record<string, number> }> = {};
+  teamMeetings.forEach(m => {
+    const lead = leads.find(l => l.id === m.leadId);   // ← lead dhundo
+    const s = lead?.state || 'Unknown';                 // ← m.state → lead?.state
+    if (!map[s]) map[s] = { total: 0, pending: 0, rejected: 0, products: {} };
+    map[s].total++;
+    if (m.status === 'Pending' || m.status === 'Scheduled') map[s].pending++;
+    if (m.status === 'Reject' || m.status === 'Not Done') map[s].rejected++;
+    const product = lead?.requirementType;              // ← m.productType → lead?.requirementType
+    if (product) map[s].products[product] = (map[s].products[product] || 0) + 1;
+  });
+  return Object.entries(map).sort(([, a], [, b]) => b.total - a.total).slice(0, 8).map(([state, data]) => ({
+    state, ...data,
+    topProduct: Object.entries(data.products).sort(([, a], [, b]) => b - a)[0]?.[0] || '—',
+  }));
+}, [teamMeetings, leads]);   // ← leads bhi dependency mein add karo
 
   // Actions
   const approveRequest = async (requestId: string) => {
@@ -457,9 +476,9 @@ export default function TCDashboard() {
                 const lead = leads.find(l => l.id === m.leadId);
                 return (
                   <tr key={m.id}>
-                    <td className="primary">{m.clientName || lead?.clientName}</td>
+                    <td className="primary">{lead?.clientName || lead?.clientName}</td>
                     <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px' }}>{m.date}</td>
-                    <td><span className="product-chip">{m.productType || '—'}</span></td>
+                    <td><span className="product-chip">{lead?.requirementType || '—'}</span></td>
                     <td style={{ color: '#3d7fff', fontWeight: 600 }}>₹{lead?.loanRequirement || '—'}</td>
                     <td>{statusBadge(m.status)}</td>
                   </tr>
@@ -1305,7 +1324,7 @@ export default function TCDashboard() {
                         const dotColor = { 'Converted': '#00d4aa', 'Meeting Done': '#3d7fff', 'Follow-Up': '#a78bfa', 'Not Done': '#ff4757', 'Scheduled': '#f59e0b' }[m.status] || '#8892b0';
                         return (
                           <div key={m.id} className="tl-item" style={{ cursor: 'pointer' }}
-                            onClick={() => setDetailModal({ type: 'meeting-detail', title: m.clientName || lead?.clientName || 'Meeting Details', data: { meeting: m, subtitle: `${m.date} · ${m.timeSlot}` } })}>
+                            onClick={() => setDetailModal({ type: 'meeting-detail', title: lead?.clientName || lead?.clientName || 'Meeting Details', data: { meeting: m, subtitle: `${m.date} · ${m.timeSlot}` } })}>
                             <div className="tl-left">
                               <div className="tl-time">{m.timeSlot}</div>
                               {i < arr.length - 1 && <div className="tl-line" />}
@@ -1315,10 +1334,10 @@ export default function TCDashboard() {
                               onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
                               onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg3)')}>
                               <div className="tl-client">
-                                {m.clientName || lead?.clientName}
+                                {lead?.clientName}
                                 {statusBadge(m.status)}
                               </div>
-                              <div className="tl-meta">BDM: {bdm?.name} · {m.meetingType} · {m.productType || '—'} · ₹{lead?.loanRequirement}</div>
+                              <div className="tl-meta">BDM: {bdm?.name} · {m.meetingType} · {lead?.requirementType || '—'} · ₹{lead?.loanRequirement}</div>
                             </div>
                           </div>
                         );
@@ -1746,7 +1765,7 @@ export default function TCDashboard() {
                         <div key={m.id} className="reschedule-wrap">
                           <div className="reschedule-header">
                             {statusBadge('Reschedule Requested')}
-                            <span style={{ fontWeight: 700, color: 'var(--text)' }}>{m.clientName || lead?.clientName}</span>
+                            <span style={{ fontWeight: 700, color: 'var(--text)' }}>{lead?.clientName || lead?.clientName}</span>
                             <span style={{ color: 'var(--text2)', fontSize: '13px' }}>— ₹{lead?.loanRequirement}</span>
                             <span style={{ color: 'var(--text3)', fontSize: '11px' }}>(BO: {bo?.name})</span>
                             <span style={{ color: 'var(--text3)', fontSize: '11px' }}>· Prev: {m.date} {m.timeSlot}</span>
@@ -1801,9 +1820,9 @@ export default function TCDashboard() {
                         const bdm = users.find(u => u.id === m.bdmId);
                         return (
                           <tr key={m.id} style={{ cursor: 'pointer' }}
-                            onClick={() => setDetailModal({ type: 'meeting-detail', title: m.clientName || lead?.clientName || 'Meeting Details', data: { meeting: m, subtitle: `${m.date} · ${m.timeSlot}` } })}>
+                            onClick={() => setDetailModal({ type: 'meeting-detail', title: lead?.clientName || lead?.clientName || 'Meeting Details', data: { meeting: m, subtitle: `${m.date} · ${m.timeSlot}` } })}>
                             <td style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{m.timeSlot}</td>
-                            <td className="primary">{m.clientName || lead?.clientName}</td>
+                            <td className="primary">{lead?.clientName}</td>
                             <td>{bdm?.name}</td>
                             <td><span className="product-chip">{m.meetingType}</span></td>
                             <td>{statusBadge(m.status)}</td>

@@ -1111,10 +1111,10 @@ export default function FMDashboard() {
                                               const bdm = users.find(u => u.id === m.bdmId);
                                               return (
                                                 <tr key={m.id}>
-                                                  <td className="pri">{m.clientName || lead?.clientName}</td>
+                                                  <td className="pri">{lead?.clientName || lead?.clientName}</td>
                                                   <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px' }}>{m.date}</td>
                                                   <td>{bdm?.name}</td>
-                                                  <td><span style={{ fontSize: '10px', background: 'var(--surface2)', color: 'var(--text2)', padding: '1px 7px', borderRadius: '4px', fontFamily: "'JetBrains Mono', monospace" }}>{m.productType || '—'}</span></td>
+                                                  <td><span style={{ fontSize: '10px', background: 'var(--surface2)', color: 'var(--text2)', padding: '1px 7px', borderRadius: '4px', fontFamily: "'JetBrains Mono', monospace" }}>{lead?.requirementType || '—'}</span></td>
                                                   <td><Badge cls={m.status === 'Converted' ? 'fm-badge-success' : m.status === 'Not Done' ? 'fm-badge-danger' : m.status === 'Reschedule Requested' ? 'fm-badge-warning' : 'fm-badge-accent'}>{m.status}</Badge></td>
                                                 </tr>
                                               );
@@ -1204,10 +1204,10 @@ export default function FMDashboard() {
                           <tr key={m.id}>
                             <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px' }}>{m.date}</td>
                             <td style={{ color: 'var(--accent)', fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{m.timeSlot}</td>
-                            <td className="pri">{m.clientName || lead?.clientName}</td>
+                            <td className="pri">{lead?.clientName}</td>
                             <td>{bdm?.name}</td>
                             <td style={{ color: 'var(--teal)' }}>{tc?.name}</td>
-                            <td><span style={{ fontSize: '10px', background: 'var(--surface2)', color: 'var(--text2)', padding: '1px 7px', borderRadius: '4px', fontFamily: "'JetBrains Mono', monospace" }}>{m.productType || '—'}</span></td>
+                            <td><span style={{ fontSize: '10px', background: 'var(--surface2)', color: 'var(--text2)', padding: '1px 7px', borderRadius: '4px', fontFamily: "'JetBrains Mono', monospace" }}>{lead?.requirementType || '—'}</span></td>
                             <td style={{ color: 'var(--accent)', fontWeight: 600 }}>₹{lead?.loanRequirement}</td>
                             <td><Badge cls={m.status === 'Converted' ? 'fm-badge-success' : m.status === 'Not Done' ? 'fm-badge-danger' : m.status === 'Reschedule Requested' ? 'fm-badge-warning' : 'fm-badge-accent'}>{m.status}</Badge></td>
                           </tr>
@@ -1291,7 +1291,7 @@ export default function FMDashboard() {
                         const bdo = users.find(u => u.id === m.bdoId);
                         return (
                           <tr key={m.id}>
-                            <td className="pri">{m.clientName || lead?.clientName}</td>
+                            <td className="pri">{lead?.clientName}</td>
                             <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px' }}>{m.date}</td>
                             <td>{bdm?.name}</td>
                             <td>{bdo?.name || <span style={{ color: 'var(--text3)' }}>—</span>}</td>
