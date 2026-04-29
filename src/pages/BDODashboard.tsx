@@ -23,6 +23,17 @@
 //   chevron:  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>,
 // };
 
+// // ─── Role colour map — same palette as BDM dashboard ─────────────────────────
+// const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
+//   BDM: { bg: 'rgba(61,127,255,0.15)',  color: '#3d7fff' },
+//   BDO: { bg: 'rgba(167,139,250,0.15)', color: '#a78bfa' },
+//   BO:  { bg: 'rgba(0,212,170,0.15)',   color: '#00d4aa' },
+//   TC:  { bg: 'rgba(245,158,11,0.15)',  color: '#f59e0b' },
+//   FM:  { bg: 'rgba(255,107,53,0.15)',  color: '#ff6b35' },
+//   RM:  { bg: 'rgba(236,72,153,0.15)',  color: '#ec4899' },
+//   FO:  { bg: 'rgba(99,102,241,0.15)',  color: '#6366f1' },
+// };
+
 // function getDateRange(period: Period, customFrom: string, customTo: string) {
 //   const today = new Date();
 //   const fmt = (d: Date) => d.toISOString().split('T')[0];
@@ -110,12 +121,8 @@
 //   const [alerts, setAlerts] = useState<{ id: string; msg: string; type: 'warn' | 'info' }[]>([]);
 //   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
 //   const [walkinDateMap, setWalkinDateMap] = useState<Record<string, string>>({});
-
-//   // Expand state
 //   const [expandedMeeting, setExpandedMeeting] = useState<string | null>(null);
 //   const [remarkText, setRemarkText] = useState<Record<string, string>>({});
-
-//   // view detail states
 //   const [viewFormLeadId, setViewFormLeadId] = useState<string | null>(null);
 
 //   useEffect(() => {
@@ -204,6 +211,16 @@
 //     await addMeetingRemark(meetingId, text, currentUser?.name || 'BDO');
 //     setRemarkText(prev => ({ ...prev, [meetingId]: '' }));
 //     toast.success('Remark added');
+//   };
+
+//   // ─── Helper: get role badge for a remark's createdBy ─────────────────────
+//   // meetingRemarks.createdBy stores the user's NAME (string), not ID
+//   // So we match by name to find the user and get their role
+//   const getRemarkRoleInfo = (createdBy: string) => {
+//     const user = users.find(u => u.name === createdBy || u.id === createdBy);
+//     const role = user?.role || '';
+//     const style = ROLE_COLORS[role] || { bg: 'rgba(148,163,184,0.15)', color: '#94a3b8' };
+//     return { role, style };
 //   };
 
 //   // ─── Expanded Panel ────────────────────────────────────────────────────────
@@ -322,7 +339,6 @@
 //                     <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--accent)', fontFamily: 'monospace' }}>{m.walkinDate}</span>
 //                   </div>
 //                 )}
-
 //                 <div style={{ paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
 //                   <div style={{ fontSize: '10px', color: 'var(--text3)', fontFamily: 'monospace', marginBottom: '5px' }}>LEAD INFO</div>
 //                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>{lead?.clientName || '—'}</div>
@@ -333,7 +349,7 @@
 //               </div>
 //             </div>
 
-//             {/* Remarks */}
+//             {/* ── Remarks — same card design, role badge added to each entry ── */}
 //             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '13px' }}>
 //               <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '1.5px', color: 'var(--text3)', textTransform: 'uppercase', fontFamily: "'JetBrains Mono',monospace", marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
 //                 💬 REMARKS
@@ -343,22 +359,52 @@
 //                   </span>
 //                 )}
 //               </div>
+
+//               {/* Remark list */}
 //               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '130px', overflowY: 'auto', marginBottom: '8px' }}>
 //                 {mRemarks.length === 0 && (
 //                   <div style={{ fontSize: '11px', color: 'var(--text3)', fontFamily: 'monospace' }}>No remarks yet</div>
 //                 )}
-//                 {mRemarks.map(r => (
-//                   <div key={r.id} style={{
-//                     background: 'var(--bg3)', border: '1px solid var(--border)',
-//                     borderRadius: '6px', padding: '6px 9px',
-//                   }}>
-//                     <div style={{ fontSize: '11px', color: 'var(--text)', marginBottom: '2px' }}>{r.remark}</div>
-//                     <div style={{ fontSize: '9px', color: 'var(--text3)', fontFamily: 'monospace' }}>
-//                       {r.createdBy} · {new Date(r.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+//                 {mRemarks.map(r => {
+//                   const { role, style } = getRemarkRoleInfo(r.createdBy);
+//                   return (
+//                     <div key={r.id} style={{
+//                       background: 'var(--bg3)', border: '1px solid var(--border)',
+//                       borderRadius: '6px', padding: '6px 9px',
+//                     }}>
+//                       {/* Remark text — unchanged */}
+//                       <div style={{ fontSize: '11px', color: 'var(--text)', marginBottom: '4px' }}>{r.remark}</div>
+
+//                       {/* Footer line: name + role badge + timestamp */}
+//                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+//                         <span style={{ fontSize: '9px', color: 'var(--text3)', fontFamily: 'monospace' }}>
+//                           {r.createdBy}
+//                         </span>
+
+//                         {/* Role badge — only shown if role is identified */}
+//                         {role && (
+//                           <span style={{
+//                             fontSize: '8px', fontWeight: 700,
+//                             padding: '1px 6px', borderRadius: '20px',
+//                             background: style.bg, color: style.color,
+//                             border: `1px solid ${style.color}40`,
+//                             fontFamily: "'JetBrains Mono', monospace",
+//                             letterSpacing: '0.5px',
+//                           }}>
+//                             {role}
+//                           </span>
+//                         )}
+
+//                         <span style={{ fontSize: '9px', color: 'var(--text3)', fontFamily: 'monospace', marginLeft: 'auto' }}>
+//                           {new Date(r.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+//                         </span>
+//                       </div>
 //                     </div>
-//                   </div>
-//                 ))}
+//                   );
+//                 })}
 //               </div>
+
+//               {/* Add remark input — completely unchanged */}
 //               <div style={{ display: 'flex', gap: '5px' }}>
 //                 <input
 //                   value={remarkText[m.id] || ''}
@@ -391,7 +437,7 @@
 //   };
 
 //   // ─── Meeting Row renderer ──────────────────────────────────────────────────
-//   const renderMeetingRow = (m: Meeting, colSpan = 8) => {
+//   const renderMeetingRow = (m: Meeting) => {
 //     const lead = leads.find(l => l.id === m.leadId);
 //     const bdm = users.find(u => u.id === m.bdmId);
 //     const isExp = expandedMeeting === m.id;
@@ -553,7 +599,7 @@
 //                 { id: 'followup', label: 'Follow-up', icon: I.followup, badge: followUpMeetings.length > 0 ? followUpMeetings.length : null, badgeCls: 'info' },
 //                 { id: 'history', label: 'All Meetings', icon: I.history },
 //               ] as any[]).map(item => (
-//                 <div key={item.id} className={`bdo-nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => { setActiveTab(item.id); setExpandedMeeting(null); }}>
+//                 <div key={item.id} className={`bdo-nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => { setActiveTab(item.id as Tab); setExpandedMeeting(null); }}>
 //                   <div className="bdo-nav-icon">{item.icon}</div>
 //                   {item.label}
 //                   {item.badge ? <span className={`bdo-nav-badge ${item.badgeCls || ''}`}>{item.badge}</span> : null}
@@ -619,7 +665,7 @@
 //                     { label: 'Total Meetings', val: stats.total, color: 'var(--warning)' },
 //                     { label: 'Pending Action', val: stats.pending, color: 'var(--danger)' },
 //                     { label: 'Follow-up', val: followUpMeetings.length, color: 'var(--purple)' },
-//                     { label: 'Walk-in Done', val: allMyMeetings.filter(m => m.walkinDone).length, color: 'var(--teal)' },
+//                     { label: 'Walk-in Done', val: stats.walkInDone, color: 'var(--teal)' },
 //                   ].map((k) => (
 //                     <div key={k.label} className="kpi-card">
 //                       <div className="kpi-label">{k.label}</div>
@@ -794,6 +840,50 @@
 //     </>
 //   );
 // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 import { useState, useMemo, useEffect, Fragment } from 'react';
@@ -994,8 +1084,10 @@ export default function BDODashboard() {
   };
 
   const handleWalkingDone = async (meetingId: string) => {
-    await updateMeeting(meetingId, { walkingStatus: 'Walking Done', bdoStatus: 'Walk-in Done' });
-    toast.success('Walk-in marked as Done');
+    // Sirf bdoStatus set karo — walkingStatus FO verify karke set karega.
+    // walkingStatus yahan set karne se FO ka walkin section bypass ho jaata tha.
+    await updateMeeting(meetingId, { bdoStatus: 'Walk-in Done' });
+    toast.success('Sent to FO for verification ✓');
   };
 
   const handleWalkingInvalid = async (meetingId: string) => {

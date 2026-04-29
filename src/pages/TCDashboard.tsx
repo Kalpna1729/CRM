@@ -1245,7 +1245,8 @@ export default function TCDashboard() {
               <div className="fade-in">
                 <div className="cc-topbar">
                   <div>
-                    <div className="cc-page-title">Good morning, {currentUser?.name?.split(' ')[0] || 'TC'}</div>
+                    {/* <div className="cc-page-title">Good morning, {currentUser?.name?.split(' ')[0] || 'TC'}</div> */}
+                    <div className="fo-page-title">Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {currentUser?.name?.split(' ')[0] || 'TC'}</div>
                     <div className="cc-page-sub">// {myTeam?.name || 'My Team'} · {myBOs.length} BOs · {allTeamLeads.length} leads active</div>
                   </div>
                   <div className="cc-topbar-right">

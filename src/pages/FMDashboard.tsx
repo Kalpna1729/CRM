@@ -557,7 +557,7 @@ export default function FMDashboard() {
         .chip-tab.active { border-color: var(--teal); color: var(--teal); background: rgba(6,182,212,0.07); }
 
         /* ── MODAL ── */
-        .fm-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .fm-modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.43); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .fm-modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 22px; width: 100%; max-width: 460px; max-height: 85vh; overflow-y: auto; }
         .fm-modal-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
         .fm-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

@@ -861,7 +861,8 @@ export default function BODashboard() {
               <div className="fade-in">
                 <div className="bo-topbar">
                   <div>
-                    <div className="bo-page-title">Good morning, {currentUser?.name?.split(' ')[0] || 'BO'}</div>
+                    <div className="fo-page-title">Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {currentUser?.name?.split(' ')[0] || 'BO'}</div>
+                    {/* <div className="bo-page-title">Good morning, {currentUser?.name?.split(' ')[0] || 'BO'}</div> */}
                     <div className="bo-page-sub">// {todayStr} · your daily snapshot</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

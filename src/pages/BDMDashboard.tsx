@@ -691,7 +691,8 @@ export default function BDMDashboard() {
                 <div className="cc-topbar">
                   <div>
                     <div className="cc-page-title">
-                      {detailView ? detailTitle[detailView] : `Good morning, ${currentUser?.name?.split(' ')[0] || 'BDM'}`}
+                      {/* {detailView ? detailTitle[detailView] : `Good morning, ${currentUser?.name?.split(' ')[0] || 'BDM'}`} */}
+                    <div className="fo-page-title">Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {currentUser?.name?.split(' ')[0] || 'BDM'}</div>
                     </div>
                     <div className="cc-page-sub">
                       {detailView ? `// ${getDetailMeetings().length} meetings` : `// ${todayStr} · ${totalMeetings} meetings in range`}
