@@ -4,14 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CRMProvider, useCRM } from "@/contexts/CRMContext";
 import LoginPage from "@/pages/LoginPage";
-// import FMDashboard from "@/pages/FMDashboard";
+import FMDashboard from "@/pages/FMDashboard";
 import BODashboard from "@/pages/BODashboard";
 import TCDashboard from "@/pages/TCDashboard";
 import BDMDashboard from "@/pages/BDMDashboard";
 import BDODashboard from "@/pages/BDODashboard";
 import FODashboard from "@/pages/FODashboard";
 import RMDashboard from "@/pages/RMDashboard";
-import MDDashboard from "@/pages/MDDashboard";
+// import MDDashboard from "@/pages/MDDashboard";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -33,14 +33,14 @@ function CRMRouter() {
   if (!currentUser) return <LoginPage />;
 
   switch (currentUser.role) {
-    // case 'FM': return <FMDashboard />;
+    case 'FM': return <FMDashboard />;
     case 'TC': return <TCDashboard />;
     case 'BDM': return <BDMDashboard />;
     case 'BO': return <BODashboard />;
     case 'BDO': return <BDODashboard />;
     case 'FO': return <FODashboard />;
     case 'RM': return <RMDashboard />;
-    case 'MD': return <MDDashboard />;
+    // case 'MD': return <MDDashboard />;
     default: return <LoginPage />;
   }
 }
