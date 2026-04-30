@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CRMProvider, useCRM } from "@/contexts/CRMContext";
 import LoginPage from "@/pages/LoginPage";
-import FMDashboard from "@/pages/FMDashboard";
+// import FMDashboard from "@/pages/FMDashboard";
 import BODashboard from "@/pages/BODashboard";
 import TCDashboard from "@/pages/TCDashboard";
 import BDMDashboard from "@/pages/BDMDashboard";
@@ -33,7 +33,7 @@ function CRMRouter() {
   if (!currentUser) return <LoginPage />;
 
   switch (currentUser.role) {
-    case 'FM': return <FMDashboard />;
+    // case 'FM': return <FMDashboard />;
     case 'TC': return <TCDashboard />;
     case 'BDM': return <BDMDashboard />;
     case 'BO': return <BODashboard />;
