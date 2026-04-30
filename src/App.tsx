@@ -11,7 +11,7 @@ import BDMDashboard from "@/pages/BDMDashboard";
 import BDODashboard from "@/pages/BDODashboard";
 import FODashboard from "@/pages/FODashboard";
 import RMDashboard from "@/pages/RMDashboard";
-// import MDDashboard from "@/pages/MDDashboard";
+import MDDashboard from "@/pages/MDDashboard";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -40,7 +40,7 @@ function CRMRouter() {
     case 'BDO': return <BDODashboard />;
     case 'FO': return <FODashboard />;
     case 'RM': return <RMDashboard />;
-    // case 'MD': return <MDDashboard />;
+    case 'MD': return <MDDashboard />;
     default: return <LoginPage />;
   }
 }
